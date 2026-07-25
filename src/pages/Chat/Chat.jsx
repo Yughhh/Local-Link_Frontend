@@ -1,0 +1,391 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  FiArrowLeft, 
+  FiSend, 
+  FiSmile, 
+  FiPhone, 
+  FiCalendar, 
+  FiUser, 
+  FiPaperclip, 
+  FiMapPin, 
+  FiShield, 
+  FiCheckCircle, 
+  FiSearch,
+  FiZap,
+  FiDroplet,
+  FiScissors,
+  FiWind,
+  FiCode,
+  FiBookOpen
+} from 'react-icons/fi';
+import Navbar from '../../components/Navbar/Navbar';
+import ChatBubble from '../../components/ChatBubble/ChatBubble';
+import Button from '../../components/Button/Button';
+import { useAuth } from '../../context/AuthContext';
+import { workers, initialChats } from '../../data/dummyData';
+import { messageAPI } from '../../utils/api';
+import defaultAvatarImg from '../../assets/images/NoProfilePicture.png';
+import './Chat.css';
+
+const popularEmojis = ["😊", "👍", "🙌", "👋", "💡", "🛠️", "📅", "💯", "🙏", "⚡", "🔧", "⭐"];
+
+const quickPrompts = [
+  { label: "📅 Can you visit today at 4 PM?", text: "Hi, can you visit my location today around 4:00 PM for the service?" },
+  { label: "💰 What is the estimated cost?", text: "Could you please provide an estimated cost for this service?" },
+  { label: "📍 Sending my exact location", text: "I'm located in Alambagh Market, Lucknow. How quickly can you reach?" },
+  { label: "⚡ Emergency repair needed", text: "This is an urgent requirement. Are you available for immediate dispatch?" },
+];
+
+function Chat() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  // Selected worker resolution
+  const currentWorker = workers.find(w => 
+    String(w.id) === String(id) || 
+    String(w._id) === String(id)
+  ) || workers[0];
+
+  const [messages, setMessages] = useState([]);
+  const [inputText, setInputText] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const [showEmojis, setShowEmojis] = useState(false);
+  const [sidebarSearch, setSidebarSearch] = useState("");
+  const [attachmentPreview, setAttachmentPreview] = useState(null);
+
+  const messagesEndRef = useRef(null);
+
+  // Filter sidebar workers
+  const filteredWorkers = workers.filter(w => 
+    w.name.toLowerCase().includes(sidebarSearch.toLowerCase()) ||
+    w.profession.toLowerCase().includes(sidebarSearch.toLowerCase())
+  );
+
+  // Load chat messages
+  useEffect(() => {
+    const fetchChatHistory = async () => {
+      const workerKey = currentWorker._id || currentWorker.id;
+      try {
+        const res = await messageAPI.getMessages(workerKey);
+        if (res.data?.messages?.length) {
+          const formatted = res.data.messages.map(m => ({
+            id: m._id,
+            sender: m.sender === workerKey ? 'worker' : 'user',
+            text: m.text,
+            timestamp: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          }));
+          setMessages(formatted);
+        } else {
+          setMessages(initialChats[currentWorker.id] || getDefaultChats(currentWorker));
+        }
+      } catch (err) {
+        setMessages(initialChats[currentWorker.id] || getDefaultChats(currentWorker));
+      }
+    };
+
+    fetchChatHistory();
+  }, [id]);
+
+  // Scroll to bottom on message update
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isTyping]);
+
+  const getDefaultChats = (workerObj) => [
+    {
+      id: 1,
+      sender: 'worker',
+      text: `Hello! I'm ${workerObj.name}, ${workerObj.profession}. How can I assist you in ${workerObj.area || 'your area'} today?`,
+      timestamp: '10:00 AM'
+    }
+  ];
+
+  const handleSend = async (e) => {
+    if (e) e.preventDefault();
+    if (!inputText.trim() && !attachmentPreview) return;
+
+    const currentText = inputText.trim();
+    const userMessage = {
+      id: Date.now(),
+      sender: 'user',
+      text: attachmentPreview ? `[Photo Attachment] ${currentText}` : currentText,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInputText("");
+    setShowEmojis(false);
+    setAttachmentPreview(null);
+
+    try {
+      await messageAPI.sendMessage({
+        receiverId: currentWorker._id || currentWorker.id,
+        text: currentText,
+        workerId: currentWorker._id || currentWorker.id,
+      });
+    } catch (err) {
+      console.log('Saved message locally');
+    }
+
+    // Provider typing response simulation
+    setIsTyping(true);
+    setTimeout(() => {
+      setIsTyping(false);
+      const workerResponse = {
+        id: Date.now() + 1,
+        sender: 'worker',
+        text: getCustomReply(currentWorker, currentText),
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      setMessages(prev => [...prev, workerResponse]);
+    }, 1400);
+  };
+
+  const getCustomReply = (workerObj, query) => {
+    const q = query.toLowerCase();
+    if (q.includes('schedule') || q.includes('visit') || q.includes('4 pm') || q.includes('today') || q.includes('time')) {
+      return `Sure! I can visit your location around that time. Please use the 'Book Appointment' button on my profile page to lock your time slot.`;
+    }
+    if (q.includes('cost') || q.includes('price') || q.includes('estimate') || q.includes('charge')) {
+      return `My base consultation rate is ${workerObj.pricePerHour || '₹399'}. For custom work, I can inspect the site and provide a final transparent estimate.`;
+    }
+    if (q.includes('urgent') || q.includes('emergency')) {
+      return `I handle emergency requests! I'm located near ${workerObj.area || 'your neighborhood'} (${workerObj.distance || '1.2 km'}) and can reach you in under 20 mins.`;
+    }
+    return `Thanks for reaching out! I've received your note and can get started promptly. Feel free to call me directly if it's urgent!`;
+  };
+
+  const handleQuickPromptClick = (promptText) => {
+    setInputText(promptText);
+  };
+
+  const handleEmojiClick = (emoji) => {
+    setInputText(prev => prev + emoji);
+  };
+
+  const handleSimulateAttachment = () => {
+    setAttachmentPreview("service_site_photo.jpg");
+  };
+
+  return (
+    <div className="chat-page-wrapper">
+      <Navbar />
+
+      <main className="chat-main-content container">
+        <div className="chat-app-card glass">
+          
+          {/* ── Left Sidebar: Provider Conversations List ── */}
+          <aside className="chat-sidebar">
+            <div className="sidebar-header">
+              <h3>Local Conversations</h3>
+              <div className="sidebar-search-box">
+                <FiSearch className="search-icon" />
+                <input 
+                  type="text" 
+                  placeholder="Search providers..." 
+                  value={sidebarSearch}
+                  onChange={(e) => setSidebarSearch(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="providers-list-scroll">
+              {filteredWorkers.map((w) => {
+                const isActive = w.id === currentWorker.id;
+                return (
+                  <button
+                    key={w.id}
+                    className={`provider-chat-item ${isActive ? 'active' : ''}`}
+                    onClick={() => navigate(`/chat/${w.id}`)}
+                  >
+                    <div className="item-avatar-wrapper">
+                      <img src={w.image} alt={w.name} className="item-avatar" />
+                      <span className={`item-status-dot ${w.isOpen ? 'online' : 'busy'}`}></span>
+                    </div>
+
+                    <div className="item-info">
+                      <div className="item-top-row">
+                        <span className="item-name">{w.name}</span>
+                        <span className="item-distance">{w.distance || '1.2 km'}</span>
+                      </div>
+                      <span className="item-profession">{w.profession}</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </aside>
+
+          {/* ── Right Main Chat Window ── */}
+          <section className="chat-window-main">
+            {/* Header */}
+            <div className="chat-header-bar glass">
+              <button className="chat-back-mobile-btn" onClick={() => navigate(-1)}>
+                <FiArrowLeft />
+              </button>
+
+              <img src={currentWorker.image} alt={currentWorker.name} className="chat-header-avatar" />
+
+              <div className="chat-header-meta">
+                <div className="name-verified-row">
+                  <h3 className="chat-header-name">{currentWorker.name}</h3>
+                  {currentWorker.verified && (
+                    <span className="verified-shield" title="Aadhaar & KYC Verified Pro">
+                      <FiShield className="shield-icon" /> Verified
+                    </span>
+                  )}
+                </div>
+                <div className="status-distance-row">
+                  <span className="status-pill">
+                    <span className={`dot ${currentWorker.isOpen ? 'online' : 'busy'}`}></span>
+                    {currentWorker.isOpen ? 'Active Now' : 'Busy'}
+                  </span>
+                  <span className="dot-separator">•</span>
+                  <span className="distance-pill">
+                    <FiMapPin className="pin-icon" /> {currentWorker.area || 'Indiranagar'} ({currentWorker.distance || '1.2 km'})
+                  </span>
+                </div>
+              </div>
+
+              {/* Action Buttons in Header */}
+              <div className="chat-header-actions">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="btn-header-call"
+                  onClick={() => window.location.href = `tel:${currentWorker.phone || '+91 98765 43210'}`}
+                  icon={FiPhone}
+                >
+                  Call
+                </Button>
+                <Button 
+                  variant="gradient" 
+                  size="sm" 
+                  onClick={() => navigate(`/worker/${currentWorker._id || currentWorker.id}`)}
+                  icon={FiCalendar}
+                >
+                  Book Service
+                </Button>
+              </div>
+            </div>
+
+            {/* Messages Area */}
+            <div className="chat-messages-area">
+              {/* Privacy Trust Banner */}
+              <div className="chat-trust-banner">
+                <FiCheckCircle className="trust-icon" />
+                <span>End-to-end local encrypted connection with <strong>{currentWorker.name}</strong></span>
+              </div>
+
+              {messages.length === 0 ? (
+                <div className="chat-empty-state">
+                  <p>Start your conversation with {currentWorker.name}!</p>
+                </div>
+              ) : (
+                messages.map(msg => (
+                  <ChatBubble 
+                    key={msg.id} 
+                    message={msg} 
+                    isMe={msg.sender === 'user'} 
+                    providerAvatar={currentWorker.image}
+                    userAvatar={user?.avatar || defaultAvatarImg}
+                  />
+                ))
+              )}
+
+              {isTyping && (
+                <div className="worker-typing-box">
+                  <img src={currentWorker.image} alt="Typing..." className="typing-avatar" />
+                  <div className="typing-bubble">
+                    <span className="typing-text">{currentWorker.name.split(' ')[0]} is typing</span>
+                    <div className="typing-dots">
+                      <span className="typing-dot"></span>
+                      <span className="typing-dot"></span>
+                      <span className="typing-dot"></span>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Quick Contextual Reply Chips */}
+            <div className="quick-prompts-bar">
+              <span className="prompts-label">Quick Prompts:</span>
+              <div className="prompts-scroller">
+                {quickPrompts.map((p, idx) => (
+                  <button 
+                    key={idx} 
+                    type="button" 
+                    className="prompt-chip"
+                    onClick={() => handleQuickPromptClick(p.text)}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Input Typing Area */}
+            <div className="chat-typing-container">
+              {showEmojis && (
+                <div className="emojis-bar glass fade-in">
+                  {popularEmojis.map(emoji => (
+                    <button key={emoji} type="button" onClick={() => handleEmojiClick(emoji)}>
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {attachmentPreview && (
+                <div className="attachment-preview-tag">
+                  <span>📷 Attachment: {attachmentPreview}</span>
+                  <button type="button" onClick={() => setAttachmentPreview(null)}>✕</button>
+                </div>
+              )}
+
+              <form className="chat-typing-form" onSubmit={handleSend}>
+                <button 
+                  type="button" 
+                  className={`typing-icon-btn ${showEmojis ? 'active' : ''}`}
+                  onClick={() => setShowEmojis(!showEmojis)}
+                  title="Insert Emoji"
+                >
+                  <FiSmile />
+                </button>
+
+                <button 
+                  type="button" 
+                  className="typing-icon-btn"
+                  onClick={handleSimulateAttachment}
+                  title="Attach Photo / Site Location"
+                >
+                  <FiPaperclip />
+                </button>
+
+                <input 
+                  type="text"
+                  placeholder={`Message ${currentWorker.name}...`}
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                />
+
+                <button type="submit" className="chat-send-btn" title="Send Message">
+                  <FiSend />
+                </button>
+              </form>
+            </div>
+          </section>
+
+        </div>
+      </main>
+    </div>
+  );
+}
+
+export default Chat;
