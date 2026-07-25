@@ -180,7 +180,7 @@ export const workers = [
     pricePerHour: '₹399/hr',
     phone: '+91 98765 43210',
     email: 'rajesh.sharma@localconnect.in',
-    image: 'https://images.unsplash.com/photo-1540569014015-19a7be504e3a?auto=format&fit=crop&w=600&q=80',
+    image: 'https://images.unsplash.com/photo-1540569014015-19a7be504e3a?auto=format&fit=crop&crop=faces&w=600&q=80',
     banner: heroBannerImg,
     about: 'Rajesh is a Government Licensed Master Electrician based in Alambagh, Lucknow. He specializes in full house rewiring, inverter installations, smart switch setups, MCB breaker replacements, and 24x7 emergency electrical repairs across Alambagh and Singar Nagar.',
     services: [
@@ -212,7 +212,7 @@ export const workers = [
     pricePerHour: '₹499/hr',
     phone: '+91 98765 11223',
     email: 'priya.patel@localconnect.in',
-    image: salonImg,
+    image: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&crop=faces&w=600&q=80',
     banner: heroBannerImg,
     about: 'Priya is a Certified Senior Beauty Therapist & Hair Stylist providing luxury home salon services across Alambagh, Chander Nagar, and Phoenix United Lucknow.',
     services: [
@@ -337,7 +337,7 @@ export const workers = [
     pricePerHour: '₹699/hr',
     phone: '+91 98321 65498',
     email: 'ananya.sen@localconnect.in',
-    image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=600&q=80',
+    image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&crop=faces&w=600&q=80',
     banner: heroBannerImg,
     about: 'Dr. Sen is an IITian & Physics Master Tutor helping school and JEE/NEET aspirants in Alambagh, Lucknow excel in competitive exams with conceptual clarity.',
     services: [
