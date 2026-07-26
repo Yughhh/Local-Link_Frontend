@@ -266,7 +266,7 @@ function Services() {
                   <h4>{item.title}</h4>
                   <p>{item.description}</p>
                   <div className="digital-card-footer">
-                    <span className="price-tag">{item.price}</span>
+                    {item.price && <span className="price-tag">{item.price}</span>}
                     <Button variant="primary" size="sm" onClick={() => handleBookService({ title: item.title, price: item.price })}>
                       Inquire Quote
                     </Button>
@@ -314,10 +314,12 @@ function Services() {
                     <p className="modal-body">
                       Your booking request will be instantly dispatched to verified local service partners in <strong>{selectedService.area || 'your area'}</strong>. Pay transparent rates via UPI or Cash after service.
                     </p>
-                    <div className="modal-price-summary">
-                      <span>Estimated Rate:</span>
-                      <strong>{formatINR(selectedService.price)}</strong>
-                    </div>
+                    {selectedService.price && (
+                      <div className="modal-price-summary">
+                        <span>Estimated Rate:</span>
+                        <strong>{formatINR(selectedService.price)}</strong>
+                      </div>
+                    )}
                     <div className="modal-actions">
                       <Button variant="gradient" onClick={confirmBooking}>
                         Confirm & Dispatch

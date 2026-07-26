@@ -140,7 +140,7 @@ function Home() {
       items.push({
         id: `digital-${svc.id}`,
         label: svc.title,
-        subtitle: `${svc.category} · ${svc.price}`,
+        subtitle: svc.price ? `${svc.category} · ${svc.price}` : svc.category,
         category: svc.category,
         icon: iconMap[svc.icon] || <FiCode />,
         badge: 'Digital',
@@ -440,7 +440,7 @@ function Home() {
                 <h4>{svc.title}</h4>
                 <p>{svc.description}</p>
                 <div className="spotlight-footer">
-                  <span className="spotlight-price">{svc.price}</span>
+                  {svc.price && <span className="spotlight-price">{svc.price}</span>}
                   <Button variant="primary" size="sm" onClick={() => navigate('/services')}>
                     Learn More
                   </Button>

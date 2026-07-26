@@ -379,7 +379,6 @@ export const indianServicesCatalog = [
     category: 'Marketing',
     icon: 'FiTrendingUp',
     description: 'Hyper-targeted Google Ads, Meta Ads, and regional social media marketing to capture local Indian customer intent.',
-    price: 'Starting at ₹9,999/mo',
     features: ['Google My Business Optimization', 'Instagram Reels & Content Creation', 'Local Citation Building', 'ROI Tracking Dashboard']
   },
   {
