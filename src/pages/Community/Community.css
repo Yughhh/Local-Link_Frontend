@@ -6,7 +6,7 @@
 }
 
 .community-main {
-  padding-top: 110px;
+  padding-top: 150px;
   padding-bottom: 60px;
   max-width: 800px; /* Centered narrow column for better forum scroller visibility */
   margin: 0 auto;
@@ -16,6 +16,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  margin-top: 95px;
   margin-bottom: 24px;
 }
 
@@ -23,7 +24,7 @@
   font-size: 24px;
   font-weight: 800;
   color: var(--text-main);
-  font-family: 'Outfit', sans-serif;
+  font-family: "Outfit", sans-serif;
   margin-bottom: 4px;
 }
 
@@ -53,7 +54,7 @@
   height: 36px;
   border-radius: 50%;
   object-fit: cover;
-  object-position: top center;
+  object-position: center;
 }
 
 .publisher-meta {
@@ -147,7 +148,7 @@
 }
 
 .forum-tab-btn.active::after {
-  content: '';
+  content: "";
   position: absolute;
   bottom: 0;
   left: 0;
@@ -172,7 +173,7 @@
 
 @media (max-width: 768px) {
   .community-main {
-    padding-top: 88px;
+    padding-top: 120px;
     padding-bottom: 40px;
   }
   .community-header-section {

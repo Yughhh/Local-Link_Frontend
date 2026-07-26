@@ -22,7 +22,7 @@
     var(--primary) 100%
   );
   border-radius: var(--radius-lg);
-  padding: 48px 48px;
+  padding: 48px;
   color: #ffffff;
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: var(--shadow-lg);
@@ -30,6 +30,10 @@
 
 .promo-banner-text {
   max-width: 600px;
+}
+
+.promo-banner-text p {
+  margin-bottom: 25px;
 }
 
 .promo-tag {

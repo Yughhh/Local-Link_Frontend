@@ -2,7 +2,7 @@
   background: var(--bg-card);
   border-top: 1px solid var(--border-color);
   padding: 60px 0 0 0;
-  margin-top: auto;
+  margin-top: 20px;
 }
 
 .footer-container {

@@ -1,11 +1,12 @@
 import electricianImg from '../assets/images/worker_electrician.jpg';
 import salonImg from '../assets/images/worker_salon.jpg';
-import plumberImg from '../assets/images/worker_plumber.png';
+import plumberImg from '../assets/images/worker_plumber_amit.png';
 import sunitaImg from '../assets/images/worker_cleaner_sunita.png';
 import rohanImg from '../assets/images/worker_developer_rohan.png';
+import ananyaImg from '../assets/images/worker_tutor_ananya.png';
 import heroBannerImg from '../assets/images/hero_banner.jpg';
 
-export { heroBannerImg, electricianImg, salonImg, plumberImg, sunitaImg, rohanImg };
+export { heroBannerImg, electricianImg, salonImg, plumberImg, sunitaImg, rohanImg, ananyaImg };
 
 export const locationsList = [
   "Lucknow, UP",
@@ -337,7 +338,7 @@ export const workers = [
     pricePerHour: '₹699/hr',
     phone: '+91 98321 65498',
     email: 'ananya.sen@localconnect.in',
-    image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&crop=faces&w=600&q=80',
+    image: ananyaImg,
     banner: heroBannerImg,
     about: 'Dr. Sen is an IITian & Physics Master Tutor helping school and JEE/NEET aspirants in Alambagh, Lucknow excel in competitive exams with conceptual clarity.',
     services: [

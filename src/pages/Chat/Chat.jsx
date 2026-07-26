@@ -24,8 +24,8 @@ import Navbar from '../../components/Navbar/Navbar';
 import ChatBubble from '../../components/ChatBubble/ChatBubble';
 import Button from '../../components/Button/Button';
 import { useAuth } from '../../context/AuthContext';
-import { workers, initialChats } from '../../data/dummyData';
-import { messageAPI } from '../../utils/api';
+import { workers, initialChats, getNetworkWorkers } from '../../data/dummyData';
+import { messageAPI, workerAPI } from '../../utils/api';
 import defaultAvatarImg from '../../assets/images/NoProfilePicture.png';
 import './Chat.css';
 
@@ -43,12 +43,18 @@ function Chat() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  // Selected worker resolution
-  const currentWorker = workers.find(w => 
-    String(w.id) === String(id) || 
-    String(w._id) === String(id)
-  ) || workers[0];
+  // All workers from local + custom/created profiles
+  const allNetworkWorkers = getNetworkWorkers();
 
+  // Resolve the current worker by matching the route :id against both id and _id fields
+  const findWorkerById = (targetId) => {
+    return allNetworkWorkers.find(w => 
+      String(w.id) === String(targetId) || 
+      String(w._id) === String(targetId)
+    );
+  };
+
+  const [currentWorker, setCurrentWorker] = useState(() => findWorkerById(id) || null);
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -58,14 +64,42 @@ function Chat() {
 
   const messagesEndRef = useRef(null);
 
-  // Filter sidebar workers
-  const filteredWorkers = workers.filter(w => 
+  // Filter sidebar workers using full network list
+  const filteredWorkers = allNetworkWorkers.filter(w => 
     w.name.toLowerCase().includes(sidebarSearch.toLowerCase()) ||
     w.profession.toLowerCase().includes(sidebarSearch.toLowerCase())
   );
 
-  // Load chat messages
+  // Resolve current worker: first try local data, then fetch from backend API
   useEffect(() => {
+    const localMatch = findWorkerById(id);
+    if (localMatch) {
+      setCurrentWorker(localMatch);
+      return;
+    }
+
+    // Worker not found locally — fetch from backend API by id
+    const fetchWorkerFromAPI = async () => {
+      try {
+        const res = await workerAPI.getById(id);
+        if (res.data?.worker) {
+          setCurrentWorker(res.data.worker);
+          return;
+        }
+      } catch (err) {
+        console.log('Worker API lookup failed for chat, using fallback');
+      }
+      // Final fallback: use first worker only if nothing else matched
+      setCurrentWorker(allNetworkWorkers[0] || workers[0]);
+    };
+
+    fetchWorkerFromAPI();
+  }, [id]);
+
+  // Load chat messages once currentWorker is resolved
+  useEffect(() => {
+    if (!currentWorker) return;
+
     const fetchChatHistory = async () => {
       const workerKey = currentWorker._id || currentWorker.id;
       try {
@@ -87,7 +121,7 @@ function Chat() {
     };
 
     fetchChatHistory();
-  }, [id]);
+  }, [currentWorker]);
 
   // Scroll to bottom on message update
   useEffect(() => {
@@ -170,6 +204,20 @@ function Chat() {
     setAttachmentPreview("service_site_photo.jpg");
   };
 
+  // Show loading state while worker is being resolved from API
+  if (!currentWorker) {
+    return (
+      <div className="chat-page-wrapper">
+        <Navbar />
+        <main className="chat-main-content container">
+          <div className="chat-app-card glass" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px' }}>
+            <p style={{ color: 'var(--text-muted)', fontSize: '16px' }}>Loading chat...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="chat-page-wrapper">
       <Navbar />
@@ -194,12 +242,14 @@ function Chat() {
 
             <div className="providers-list-scroll">
               {filteredWorkers.map((w) => {
-                const isActive = w.id === currentWorker.id;
+                const wKey = String(w._id || w.id);
+                const currentKey = String(currentWorker._id || currentWorker.id);
+                const isActive = wKey === currentKey;
                 return (
                   <button
-                    key={w.id}
+                    key={w._id || w.id}
                     className={`provider-chat-item ${isActive ? 'active' : ''}`}
-                    onClick={() => navigate(`/chat/${w.id}`)}
+                    onClick={() => navigate(`/chat/${w._id || w.id}`)}
                   >
                     <div className="item-avatar-wrapper">
                       <img src={w.image} alt={w.name} className="item-avatar" />

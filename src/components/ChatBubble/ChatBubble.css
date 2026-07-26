@@ -11,7 +11,7 @@
   height: 32px;
   border-radius: 50%;
   object-fit: cover;
-  object-position: top center;
+  object-position: center;
   flex-shrink: 0;
   border: 1.5px solid var(--border-color);
 }

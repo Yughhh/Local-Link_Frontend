@@ -57,7 +57,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: top center; /* Focuses on worker face */
+  object-position: center; /* Focuses on worker face */
 }
 
 .worker-profile-header-info {

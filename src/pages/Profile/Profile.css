@@ -6,7 +6,7 @@
 }
 
 .profile-main {
-  padding-top: 90px;
+  padding-top: 150px;
   padding-bottom: 60px;
 }
 
@@ -14,7 +14,8 @@
   font-size: 24px;
   font-weight: 800;
   color: var(--text-main);
-  font-family: 'Outfit', sans-serif;
+  font-family: "Outfit", sans-serif;
+  margin-top: 90px;
   margin-bottom: 4px;
 }
 
@@ -78,7 +79,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: top center;
+  object-position: center;
 }
 
 .avatar-edit-overlay-btn {
@@ -169,7 +170,7 @@
   font-size: 16px;
   font-weight: 800;
   color: var(--text-main);
-  font-family: 'Outfit', sans-serif;
+  font-family: "Outfit", sans-serif;
 }
 
 .mt-5 {
@@ -209,7 +210,9 @@
   color: var(--text-main);
   background: var(--bg-soft);
   outline: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .profile-form-group input:focus:not(:disabled) {
@@ -294,7 +297,7 @@
 
 @media (max-width: 600px) {
   .profile-main {
-    padding-top: 70px;
+    padding-top: 120px;
     padding-bottom: 40px;
   }
   .profile-page-title {
