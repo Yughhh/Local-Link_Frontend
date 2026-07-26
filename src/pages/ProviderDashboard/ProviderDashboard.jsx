@@ -74,11 +74,22 @@ function ProviderDashboard() {
     const fetchBookings = async () => {
       setLoading(true);
       const providerKey = user?._id || user?.email;
+      if (!providerKey) {
+        setBookings([]);
+        setLoading(false);
+        return;
+      }
       const netBookings = getNetworkBookings(providerKey);
       try {
         const res = await bookingAPI.getProviderBookings();
-        if (res.data?.bookings?.length) {
-          setBookings([...res.data.bookings, ...netBookings.filter(b => typeof b.id === 'string' && b.id.startsWith('BK-'))]);
+        if (res.data?.bookings) {
+          const merged = [...res.data.bookings, ...netBookings];
+          const uniqueMap = new Map();
+          merged.forEach(b => {
+            const idStr = String(b._id || b.id || b.bookingId);
+            if (!uniqueMap.has(idStr)) uniqueMap.set(idStr, b);
+          });
+          setBookings(Array.from(uniqueMap.values()));
         } else {
           setBookings(netBookings);
         }
@@ -91,11 +102,21 @@ function ProviderDashboard() {
 
     const fetchMyServices = async () => {
       const providerKey = user?._id || user?.email;
+      if (!providerKey) {
+        setPublishedServices([]);
+        return;
+      }
       const localServices = getNetworkServices(providerKey);
       try {
         const res = await serviceAPI.getMyServices();
-        if (res.data?.services?.length) {
-          setPublishedServices([...res.data.services, ...localServices]);
+        if (res.data?.services) {
+          const merged = [...res.data.services, ...localServices];
+          const uniqueMap = new Map();
+          merged.forEach(s => {
+            const idStr = String(s._id || s.id);
+            if (!uniqueMap.has(idStr)) uniqueMap.set(idStr, s);
+          });
+          setPublishedServices(Array.from(uniqueMap.values()));
         } else {
           setPublishedServices(localServices);
         }
@@ -211,8 +232,20 @@ function ProviderDashboard() {
   };
 
   const handleDeleteService = async (serviceId) => {
+    const svcToDelete = publishedServices.find(s => String(s._id || s.id) === String(serviceId));
+    const providerKey = String(user?._id || user?.email || '').toLowerCase();
+    const isOwner = svcToDelete && (
+      String(svcToDelete.providerId || '').toLowerCase() === providerKey ||
+      String(svcToDelete.providerEmail || '').toLowerCase() === providerKey ||
+      String(svcToDelete.provider || '').toLowerCase() === providerKey
+    );
+
+    if (!isOwner && user?.role !== 'admin') {
+      alert("Unauthorized: You can only delete service packages published by your account.");
+      return;
+    }
+
     if (window.confirm("Are you sure you want to remove this published service package?")) {
-      const providerKey = user?._id || user?.email;
       try {
         await serviceAPI.delete(serviceId);
       } catch (err) {

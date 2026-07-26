@@ -583,10 +583,11 @@ export const getNetworkServices = (providerId) => {
     } catch (e) {}
   }
   if (providerId) {
+    const targetKey = String(providerId).toLowerCase().trim();
     return customServices.filter(s => 
-      String(s.providerId) === String(providerId) || 
-      String(s.providerEmail) === String(providerId) ||
-      String(s.provider) === String(providerId)
+      String(s.providerId || '').toLowerCase().trim() === targetKey || 
+      String(s.providerEmail || '').toLowerCase().trim() === targetKey ||
+      String(s.provider || '').toLowerCase().trim() === targetKey
     );
   }
   return [...nearbyLocalServices, ...customServices];
@@ -637,6 +638,7 @@ export const deleteNetworkService = (serviceId) => {
 };
 
 export const getNetworkBookings = (providerId) => {
+  if (!providerId) return [];
   const custom = localStorage.getItem('localconnect_network_bookings');
   let customBookings = [];
   if (custom) {
@@ -645,15 +647,40 @@ export const getNetworkBookings = (providerId) => {
     } catch (e) {}
   }
   const allBookings = [...customBookings, ...bookings];
-  if (providerId) {
-    return allBookings.filter(b => 
-      String(b.providerId) === String(providerId) || 
-      String(b.providerEmail) === String(providerId) ||
-      String(b.worker) === String(providerId) ||
-      String(b.provider) === String(providerId)
-    );
+  const targetKey = String(providerId).toLowerCase().trim();
+
+  return allBookings.filter(b => 
+    String(b.providerId || '').toLowerCase().trim() === targetKey || 
+    String(b.providerEmail || '').toLowerCase().trim() === targetKey ||
+    String(b.worker || '').toLowerCase().trim() === targetKey ||
+    String(b.provider || '').toLowerCase().trim() === targetKey
+  );
+};
+
+export const getNetworkCustomerBookings = (customerUserObj) => {
+  if (!customerUserObj) return [];
+  const custom = localStorage.getItem('localconnect_network_bookings');
+  let customBookings = [];
+  if (custom) {
+    try {
+      customBookings = JSON.parse(custom);
+    } catch (e) {}
   }
-  return allBookings;
+  const allBookings = [...customBookings, ...bookings];
+
+  const userKeys = [
+    typeof customerUserObj === 'string' ? customerUserObj : null,
+    customerUserObj?._id,
+    customerUserObj?.email,
+    customerUserObj?.name
+  ].filter(Boolean).map(k => String(k).toLowerCase().trim());
+
+  return allBookings.filter(b => {
+    const cId = String(b.customer?._id || b.customer || '').toLowerCase().trim();
+    const cEmail = String(b.customer?.email || b.customerEmail || '').toLowerCase().trim();
+    const cName = String(b.customerName || b.customer?.name || '').toLowerCase().trim();
+    return userKeys.includes(cId) || userKeys.includes(cEmail) || userKeys.includes(cName);
+  });
 };
 
 export const saveNetworkBooking = (newBooking) => {
