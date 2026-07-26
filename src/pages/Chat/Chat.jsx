@@ -1,17 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  FiArrowLeft, 
-  FiSend, 
-  FiSmile, 
-  FiPhone, 
-  FiCalendar, 
-  FiUser, 
-  FiPaperclip, 
-  FiMapPin, 
-  FiShield, 
-  FiCheckCircle, 
+import {
+  FiArrowLeft,
+  FiSend,
+  FiSmile,
+  FiPhone,
+  FiCalendar,
+  FiUser,
+  FiPaperclip,
+  FiMapPin,
+  FiShield,
+  FiCheckCircle,
   FiSearch,
   FiZap,
   FiDroplet,
@@ -48,8 +48,8 @@ function Chat() {
 
   // Resolve the current worker by matching the route :id against both id and _id fields
   const findWorkerById = (targetId) => {
-    return allNetworkWorkers.find(w => 
-      String(w.id) === String(targetId) || 
+    return allNetworkWorkers.find(w =>
+      String(w.id) === String(targetId) ||
       String(w._id) === String(targetId)
     );
   };
@@ -65,7 +65,7 @@ function Chat() {
   const messagesEndRef = useRef(null);
 
   // Filter sidebar workers using full network list
-  const filteredWorkers = allNetworkWorkers.filter(w => 
+  const filteredWorkers = allNetworkWorkers.filter(w =>
     w.name.toLowerCase().includes(sidebarSearch.toLowerCase()) ||
     w.profession.toLowerCase().includes(sidebarSearch.toLowerCase())
   );
@@ -224,16 +224,16 @@ function Chat() {
 
       <main className="chat-main-content container">
         <div className="chat-app-card glass">
-          
+
           {/* ── Left Sidebar: Provider Conversations List ── */}
           <aside className="chat-sidebar">
             <div className="sidebar-header">
               <h3>Local Conversations</h3>
               <div className="sidebar-search-box">
                 <FiSearch className="search-icon" />
-                <input 
-                  type="text" 
-                  placeholder="Search providers..." 
+                <input
+                  type="text"
+                  placeholder="Search providers..."
                   value={sidebarSearch}
                   onChange={(e) => setSidebarSearch(e.target.value)}
                 />
@@ -302,18 +302,18 @@ function Chat() {
 
               {/* Action Buttons in Header */}
               <div className="chat-header-actions">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   className="btn-header-call"
                   onClick={() => window.location.href = `tel:${currentWorker.phone || '+91 98765 43210'}`}
                   icon={FiPhone}
                 >
                   Call
                 </Button>
-                <Button 
-                  variant="gradient" 
-                  size="sm" 
+                <Button
+                  variant="gradient"
+                  size="sm"
                   onClick={() => navigate(`/worker/${currentWorker._id || currentWorker.id}`)}
                   icon={FiCalendar}
                 >
@@ -336,10 +336,10 @@ function Chat() {
                 </div>
               ) : (
                 messages.map(msg => (
-                  <ChatBubble 
-                    key={msg.id} 
-                    message={msg} 
-                    isMe={msg.sender === 'user'} 
+                  <ChatBubble
+                    key={msg.id}
+                    message={msg}
+                    isMe={msg.sender === 'user'}
                     providerAvatar={currentWorker.image}
                     userAvatar={user?.avatar || defaultAvatarImg}
                   />
@@ -359,7 +359,7 @@ function Chat() {
                   </div>
                 </div>
               )}
-              
+
               <div ref={messagesEndRef} />
             </div>
 
@@ -368,9 +368,9 @@ function Chat() {
               <span className="prompts-label">Quick Prompts:</span>
               <div className="prompts-scroller">
                 {quickPrompts.map((p, idx) => (
-                  <button 
-                    key={idx} 
-                    type="button" 
+                  <button
+                    key={idx}
+                    type="button"
                     className="prompt-chip"
                     onClick={() => handleQuickPromptClick(p.text)}
                   >
@@ -400,8 +400,8 @@ function Chat() {
               )}
 
               <form className="chat-typing-form" onSubmit={handleSend}>
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className={`typing-icon-btn ${showEmojis ? 'active' : ''}`}
                   onClick={() => setShowEmojis(!showEmojis)}
                   title="Insert Emoji"
@@ -409,8 +409,8 @@ function Chat() {
                   <FiSmile />
                 </button>
 
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className="typing-icon-btn"
                   onClick={handleSimulateAttachment}
                   title="Attach Photo / Site Location"
@@ -418,7 +418,7 @@ function Chat() {
                   <FiPaperclip />
                 </button>
 
-                <input 
+                <input
                   type="text"
                   placeholder={`Message ${currentWorker.name}...`}
                   value={inputText}
