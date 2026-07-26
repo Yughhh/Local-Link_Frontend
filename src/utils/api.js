@@ -65,8 +65,10 @@ export const workerAPI = {
 // ============== SERVICES ==============
 export const serviceAPI = {
   getAll: (params) => api.get('/services', { params }),
+  getMyServices: () => api.get('/services/my-services'),
   getById: (id) => api.get(`/services/${id}`),
   create: (data) => api.post('/services', data),
+  delete: (id) => api.delete(`/services/${id}`),
 };
 
 // ============== BOOKINGS ==============
@@ -105,6 +107,8 @@ export const offerAPI = {
 export const messageAPI = {
   getMessages: (targetId) => api.get(`/messages/${targetId}`),
   sendMessage: (data) => api.post('/messages', data),
+  editMessage: (id, text) => api.put(`/messages/item/${id}`, { text }),
+  deleteMessage: (id) => api.delete(`/messages/item/${id}`),
 };
 
 export default api;

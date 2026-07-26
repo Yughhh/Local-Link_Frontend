@@ -10,7 +10,7 @@ import ReviewCard from '../../components/ReviewCard/ReviewCard';
 import Button from '../../components/Button/Button';
 import Loader from '../../components/Loader/Loader';
 import { useAuth } from '../../context/AuthContext';
-import { getNetworkWorkers } from '../../data/dummyData';
+import { getNetworkWorkers, saveNetworkBooking } from '../../data/dummyData';
 import { formatPriceText } from '../../data/formatters';
 import { workerAPI, bookingAPI, reviewAPI } from '../../utils/api';
 import defaultAvatarImg from '../../assets/images/NoProfilePicture.png';
@@ -158,6 +158,28 @@ function WorkerDetails() {
       alert("Please select a date and time slot.");
       return;
     }
+
+    const newBookingObj = {
+      id: 'BK-IN' + Math.floor(1000 + Math.random() * 9000),
+      bookingId: 'BK-IN' + Math.floor(1000 + Math.random() * 9000),
+      customerName: user?.name || 'Anshu Kumar',
+      customer: {
+        name: user?.name || 'Anshu Kumar',
+        email: user?.email || 'anshu@gmail.com',
+        phone: user?.phone || '+91 98765 12345',
+        avatar: user?.avatar || null,
+      },
+      worker: worker._id || worker.id,
+      providerId: worker.user || worker.email || worker.id,
+      providerEmail: worker.email,
+      service: selectedService?.name || 'General Service',
+      date: bookingDate,
+      time: bookingTime,
+      amount: selectedService?.price || displayRate,
+      status: 'Pending',
+    };
+
+    saveNetworkBooking(newBookingObj);
 
     try {
       await bookingAPI.create({

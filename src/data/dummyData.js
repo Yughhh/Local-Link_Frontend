@@ -524,17 +524,7 @@ export const faqs = [
   }
 ];
 
-export const initialChats = {
-  1: [
-    { id: 1, sender: 'worker', text: 'Namaste! Thanks for reaching out to Rajesh Electricals. How can I assist you today?', timestamp: '10:30 AM' },
-    { id: 2, sender: 'user', text: 'Hi Rajesh! I need to get smart WiFi switches installed in my living room. Are you available today around 3 PM?', timestamp: '10:32 AM' },
-    { id: 3, sender: 'worker', text: 'Yes, 3 PM works perfectly for Indiranagar! I will bring all testing gear and smart switch modules.', timestamp: '10:35 AM' }
-  ],
-  2: [
-    { id: 1, sender: 'worker', text: 'Hello! Let me know if you would like to schedule an organic hair spa or bridal consultation at home.', timestamp: 'Yesterday' },
-    { id: 2, sender: 'user', text: 'Hi Priya, yes! Looking for an O3+ facial session on Saturday morning in Bandra.', timestamp: 'Yesterday' }
-  ]
-};
+export const initialChats = {};
 
 export const bookings = [
   { id: 'BK-IN9821', customerName: 'Sandra Bullock', service: 'Full House Deep Sanitization & Eco-Clean', date: 'Jul 24, 2026', status: 'Pending', amount: '₹1,999' },
@@ -583,13 +573,20 @@ export const saveNetworkWorker = (newWorker) => {
   return [...workers, ...customWorkers];
 };
 
-export const getNetworkServices = () => {
+export const getNetworkServices = (providerId) => {
   const custom = localStorage.getItem('localconnect_network_services');
   let customServices = [];
   if (custom) {
     try {
       customServices = JSON.parse(custom);
     } catch (e) {}
+  }
+  if (providerId) {
+    return customServices.filter(s => 
+      String(s.providerId) === String(providerId) || 
+      String(s.providerEmail) === String(providerId) ||
+      String(s.provider) === String(providerId)
+    );
   }
   return [...nearbyLocalServices, ...customServices];
 };
@@ -605,4 +602,262 @@ export const saveNetworkService = (newService) => {
   customServices.unshift(newService);
   localStorage.setItem('localconnect_network_services', JSON.stringify(customServices));
   return [...nearbyLocalServices, ...customServices];
+};
+
+export const getPersistentChatMessages = (targetKey) => {
+  const key = `localconnect_messages_${targetKey}`;
+  const stored = localStorage.getItem(key);
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch (e) {}
+  }
+  return null;
+};
+
+export const savePersistentChatMessage = (targetKey, newMsgObj) => {
+  const key = `localconnect_messages_${targetKey}`;
+  const existing = getPersistentChatMessages(targetKey) || initialChats[targetKey] || [];
+  const updated = [...existing, newMsgObj];
+  localStorage.setItem(key, JSON.stringify(updated));
+  return updated;
+};
+
+export const deleteNetworkService = (serviceId) => {
+  const custom = localStorage.getItem('localconnect_network_services');
+  if (custom) {
+    try {
+      let customServices = JSON.parse(custom);
+      customServices = customServices.filter(s => String(s.id) !== String(serviceId) && String(s._id) !== String(serviceId));
+      localStorage.setItem('localconnect_network_services', JSON.stringify(customServices));
+    } catch (e) {}
+  }
+  return getNetworkServices();
+};
+
+export const getNetworkBookings = (providerId) => {
+  const custom = localStorage.getItem('localconnect_network_bookings');
+  let customBookings = [];
+  if (custom) {
+    try {
+      customBookings = JSON.parse(custom);
+    } catch (e) {}
+  }
+  const allBookings = [...customBookings, ...bookings];
+  if (providerId) {
+    return allBookings.filter(b => 
+      String(b.providerId) === String(providerId) || 
+      String(b.providerEmail) === String(providerId) ||
+      String(b.worker) === String(providerId) ||
+      String(b.provider) === String(providerId)
+    );
+  }
+  return allBookings;
+};
+
+export const saveNetworkBooking = (newBooking) => {
+  const custom = localStorage.getItem('localconnect_network_bookings');
+  let customBookings = [];
+  if (custom) {
+    try {
+      customBookings = JSON.parse(custom);
+    } catch (e) {}
+  }
+  customBookings.unshift(newBooking);
+  localStorage.setItem('localconnect_network_bookings', JSON.stringify(customBookings));
+  return [...customBookings, ...bookings];
+};
+
+export const editPersistentChatMessage = (targetKey, messageId, newText) => {
+  const key = `localconnect_messages_${targetKey}`;
+  const existing = getPersistentChatMessages(targetKey) || [];
+  const updated = existing.map(m => (String(m.id) === String(messageId) ? { ...m, text: newText, isEdited: true } : m));
+  localStorage.setItem(key, JSON.stringify(updated));
+  return updated;
+};
+
+export const deletePersistentChatMessage = (targetKey, messageId) => {
+  const key = `localconnect_messages_${targetKey}`;
+  const existing = getPersistentChatMessages(targetKey) || [];
+  const updated = existing.filter(m => String(m.id) !== String(messageId));
+  localStorage.setItem(key, JSON.stringify(updated));
+  return updated;
+};
+
+export const saveCustomerNotification = (recipientKey, notificationObj) => {
+  if (!recipientKey) return [];
+  const key = `localconnect_notifications_${String(recipientKey).toLowerCase().trim()}`;
+  const custom = localStorage.getItem(key);
+  let notifs = [];
+  if (custom) {
+    try {
+      notifs = JSON.parse(custom);
+    } catch (e) {}
+  }
+  const fullNotifObj = { ...notificationObj, recipientKey: String(recipientKey).toLowerCase().trim() };
+  notifs.unshift(fullNotifObj);
+  localStorage.setItem(key, JSON.stringify(notifs));
+  return notifs;
+};
+
+export const getCustomerNotifications = (userObj) => {
+  if (!userObj) return [];
+  
+  // Extract all authorized identifiers for the current user
+  const userKeys = [
+    typeof userObj === 'string' ? userObj : null,
+    userObj?._id,
+    userObj?.email,
+    userObj?.name
+  ].filter(Boolean).map(k => String(k).toLowerCase().trim());
+
+  const uniqueKeys = Array.from(new Set(userKeys));
+  let userNotifs = [];
+
+  uniqueKeys.forEach(key => {
+    const storageKey = `localconnect_notifications_${key}`;
+    const custom = localStorage.getItem(storageKey);
+    if (custom) {
+      try {
+        const parsed = JSON.parse(custom);
+        userNotifs = [...userNotifs, ...parsed];
+      } catch (e) {}
+    }
+  });
+
+  // Deduplicate notifications by id
+  const seenIds = new Set();
+  const authorizedNotifications = [];
+  for (const n of userNotifs) {
+    if (!seenIds.has(n.id)) {
+      seenIds.add(n.id);
+      authorizedNotifications.push(n);
+    }
+  }
+
+  return authorizedNotifications;
+};
+
+export const markCustomerNotificationRead = (userObj, notificationId) => {
+  if (!userObj) return;
+  const userKeys = [
+    typeof userObj === 'string' ? userObj : null,
+    userObj?._id,
+    userObj?.email,
+    userObj?.name
+  ].filter(Boolean).map(k => String(k).toLowerCase().trim());
+
+  const uniqueKeys = Array.from(new Set(userKeys));
+  uniqueKeys.forEach(key => {
+    const storageKey = `localconnect_notifications_${key}`;
+    const custom = localStorage.getItem(storageKey);
+    if (custom) {
+      try {
+        let notifs = JSON.parse(custom);
+        notifs = notifs.map(n => String(n.id) === String(notificationId) ? { ...n, read: true } : n);
+        localStorage.setItem(storageKey, JSON.stringify(notifs));
+      } catch (e) {}
+    }
+  });
+};
+
+export const markAllCustomerNotificationsRead = (userObj) => {
+  if (!userObj) return;
+  const userKeys = [
+    typeof userObj === 'string' ? userObj : null,
+    userObj?._id,
+    userObj?.email,
+    userObj?.name
+  ].filter(Boolean).map(k => String(k).toLowerCase().trim());
+
+  const uniqueKeys = Array.from(new Set(userKeys));
+  uniqueKeys.forEach(key => {
+    const storageKey = `localconnect_notifications_${key}`;
+    const custom = localStorage.getItem(storageKey);
+    if (custom) {
+      try {
+        let notifs = JSON.parse(custom);
+        notifs = notifs.map(n => ({ ...n, read: true }));
+        localStorage.setItem(storageKey, JSON.stringify(notifs));
+      } catch (e) {}
+    }
+  });
+};
+
+export const saveSeparateAccount = (userObj) => {
+  const isProvider = userObj.role === 'provider' || userObj.accountType === 'provider';
+  const storageKey = isProvider ? 'localconnect_provider_accounts' : 'localconnect_customer_accounts';
+  const existingStr = localStorage.getItem(storageKey);
+  let accounts = [];
+  if (existingStr) {
+    try {
+      accounts = JSON.parse(existingStr);
+    } catch (e) {}
+  }
+
+  accounts = accounts.filter(a => a.email.toLowerCase() !== userObj.email.toLowerCase());
+  const formattedUser = { ...userObj, role: isProvider ? 'provider' : 'user', accountType: isProvider ? 'provider' : 'customer' };
+  accounts.unshift(formattedUser);
+  localStorage.setItem(storageKey, JSON.stringify(accounts));
+  return formattedUser;
+};
+
+export const findSeparateAccount = (email) => {
+  if (!email) return null;
+  const targetEmail = email.toLowerCase().trim();
+
+  // Search Provider Accounts storage
+  const providersStr = localStorage.getItem('localconnect_provider_accounts');
+  if (providersStr) {
+    try {
+      const providers = JSON.parse(providersStr);
+      const match = providers.find(p => p.email.toLowerCase() === targetEmail);
+      if (match) return { ...match, role: 'provider', accountType: 'provider' };
+    } catch (e) {}
+  }
+
+  // Search Customer Accounts storage
+  const customersStr = localStorage.getItem('localconnect_customer_accounts');
+  if (customersStr) {
+    try {
+      const customers = JSON.parse(customersStr);
+      const match = customers.find(c => c.email.toLowerCase() === targetEmail);
+      if (match) return { ...match, role: 'user', accountType: 'customer' };
+    } catch (e) {}
+  }
+
+  // Default lookup based on email identifier
+  if (targetEmail.includes('provider')) {
+    return {
+      _id: 'provider_' + Date.now(),
+      name: email.split('@')[0] || 'Service Provider',
+      email,
+      role: 'provider',
+      accountType: 'provider'
+    };
+  }
+
+  return {
+    _id: 'customer_' + Date.now(),
+    name: email.split('@')[0] || 'Customer',
+    email,
+    role: 'user',
+    accountType: 'customer'
+  };
+};
+
+export const updateNetworkBookingStatus = (bookingId, newStatus) => {
+  const custom = localStorage.getItem('localconnect_network_bookings');
+  let customBookings = [];
+  if (custom) {
+    try {
+      customBookings = JSON.parse(custom);
+      customBookings = customBookings.map(b => 
+        (String(b._id) === String(bookingId) || String(b.id) === String(bookingId) || String(b.bookingId) === String(bookingId)) 
+          ? { ...b, status: newStatus } 
+          : b
+      );
+      localStorage.setItem('localconnect_network_bookings', JSON.stringify(customBookings));
+    } catch (e) {}
+  }
 };

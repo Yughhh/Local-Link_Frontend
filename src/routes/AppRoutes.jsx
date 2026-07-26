@@ -35,7 +35,6 @@ function AppRoutes() {
       <Route path="/nearby" element={<Nearby />} />
       <Route path="/worker/:id" element={<WorkerDetails />} />
       <Route path="/offers" element={<Offers />} />
-      <Route path="/become-provider" element={<CreateProviderProfile />} />
 
       {/* Auth Routes */}
       <Route path="/login" element={<Login />} />
@@ -63,7 +62,12 @@ function AppRoutes() {
         </ProtectedRoute>
       } />
 
-      {/* Provider Routes – Require Provider or Admin Role */}
+      {/* Provider Routes – Require Provider or Admin Role ONLY */}
+      <Route path="/become-provider" element={
+        <ProtectedRoute roles={['provider', 'admin']}>
+          <CreateProviderProfile />
+        </ProtectedRoute>
+      } />
       <Route path="/provider-dashboard" element={
         <ProtectedRoute roles={['provider', 'admin']}>
           <ProviderDashboard />

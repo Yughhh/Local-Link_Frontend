@@ -291,6 +291,32 @@ function Profile() {
             </div>
 
             <div className="profile-sidebar-actions">
+              {(authUser?.role === 'provider' || authUser?.role === 'admin') && (
+                <button 
+                  type="button" 
+                  className="btn-provider-sidebar" 
+                  onClick={() => window.location.href = "/provider-dashboard"}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    width: '100%',
+                    padding: '10px 14px',
+                    marginBottom: '10px',
+                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: 'var(--radius-md)',
+                    fontSize: '13px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
+                  }}
+                >
+                  Go to Provider Panel
+                </button>
+              )}
               <button type="button" className="btn-logout-sidebar" onClick={handleLogout}>
                 <FiLogOut /> 
                 <span>Sign Out</span>

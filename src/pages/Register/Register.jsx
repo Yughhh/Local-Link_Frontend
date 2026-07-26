@@ -59,13 +59,23 @@ function Register() {
         role: formData.role,
       });
 
+      const registeredUser = result?.user;
+      const userRole = registeredUser?.role || formData.role;
+
+      let targetPath = '/';
+      if (userRole === 'provider' || userRole === 'admin') {
+        targetPath = '/provider-dashboard';
+      } else {
+        targetPath = '/';
+      }
+
       // Show success popup
-      setSuccessName(result?.user?.name || formData.name.trim());
+      setSuccessName(registeredUser?.name || formData.name.trim());
       setShowSuccess(true);
 
       // Navigate after popup
       setTimeout(() => {
-        navigate('/');
+        navigate(targetPath, { replace: true });
       }, 1800);
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed. Please check your information and try again.');

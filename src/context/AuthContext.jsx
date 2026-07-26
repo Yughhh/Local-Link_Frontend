@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authAPI } from '../utils/api';
+import { saveSeparateAccount, findSeparateAccount } from '../data/dummyData';
 
 const AuthContext = createContext(null);
 
@@ -17,13 +18,15 @@ export function AuthProvider({ children }) {
       if (savedToken && savedUser) {
         try {
           setToken(savedToken);
-          setUser(JSON.parse(savedUser));
+          const parsedUser = JSON.parse(savedUser);
+          setUser(parsedUser);
           // Verify token with backend if server is running
           if (!savedToken.startsWith('mock_')) {
             const res = await authAPI.getMe();
             if (res.data?.user) {
-              setUser(res.data.user);
-              localStorage.setItem('user', JSON.stringify(res.data.user));
+              const formatted = saveSeparateAccount(res.data.user);
+              setUser(formatted);
+              localStorage.setItem('user', JSON.stringify(formatted));
             }
           }
         } catch (error) {
@@ -47,30 +50,35 @@ export function AuthProvider({ children }) {
       const res = await authAPI.login({ email, password });
       const { token: newToken, user: userData } = res.data;
 
+      const formattedUser = saveSeparateAccount(userData);
       localStorage.setItem('token', newToken);
-      localStorage.setItem('user', JSON.stringify(userData));
+      localStorage.setItem('user', JSON.stringify(formattedUser));
       setToken(newToken);
-      setUser(userData);
+      setUser(formattedUser);
 
-      return res.data;
+      return { ...res.data, user: formattedUser };
     } catch (err) {
-      // If the request failed due to authentication (401), propagate the error
+      // If authentication failed (401), propagate error
       if (err.response?.status === 401) {
         throw err;
       }
-      // If there is no response (network error) perform local fallback login
+      // If network error/backend offline, look up separate account storage
       if (!err.response) {
-        console.warn('Backend server offline or unreachable. Performing local authentication fallback...');
+        console.warn('Backend server offline. Using separate account storage lookup...');
+        const storedUser = findSeparateAccount(email);
         const fallbackUser = {
-          _id: 'user_' + Date.now(),
-          name: email.split('@')[0] || 'Anshu Kumar',
+          _id: storedUser?._id || 'user_' + Date.now(),
+          name: storedUser?.name || email.split('@')[0],
           email,
-          phone: '+91 98765 12345',
-          role: email.includes('provider') ? 'provider' : 'user',
+          phone: storedUser?.phone || '+91 98765 12345',
+          role: storedUser?.role || (email.includes('provider') ? 'provider' : 'user'),
+          accountType: storedUser?.accountType || (email.includes('provider') ? 'provider' : 'customer'),
           city: 'Lucknow, UP',
           avatar: null,
           notifications: { emailAlerts: true, pushAlerts: true, smsAlerts: true },
         };
+
+        saveSeparateAccount(fallbackUser);
         const fallbackToken = 'mock_jwt_token_' + Date.now();
 
         localStorage.setItem('token', fallbackToken);
@@ -80,7 +88,6 @@ export function AuthProvider({ children }) {
 
         return { success: true, token: fallbackToken, user: fallbackUser };
       }
-      // For other server errors, rethrow
       throw err;
     }
   }, []);
@@ -90,29 +97,31 @@ export function AuthProvider({ children }) {
       const res = await authAPI.register(formData);
       const { token: newToken, user: userData } = res.data;
 
+      const formattedUser = saveSeparateAccount(userData);
       localStorage.setItem('token', newToken);
-      localStorage.setItem('user', JSON.stringify(userData));
+      localStorage.setItem('user', JSON.stringify(formattedUser));
       setToken(newToken);
-      setUser(userData);
+      setUser(formattedUser);
 
-      return res.data;
+      return { ...res.data, user: formattedUser };
     } catch (err) {
-      // If server responded with an error, propagate it
       if (err.response) {
         throw err;
       }
-      // If network error / backend offline, perform local registration fallback
-      console.warn('Backend server offline. Registering user in local session...');
+      console.warn('Backend server offline. Registering user in separate account storage...');
       const fallbackUser = {
-        _id: 'user_' + Date.now(),
+        _id: (formData.role === 'provider' ? 'provider_' : 'customer_') + Date.now(),
         name: formData.name,
         email: formData.email,
         phone: formData.phone || '+91 98765 43210',
         role: formData.role || 'user',
+        accountType: formData.role === 'provider' ? 'provider' : 'customer',
         city: 'Lucknow, UP',
         avatar: null,
         notifications: { emailAlerts: true, pushAlerts: true, smsAlerts: true },
       };
+
+      saveSeparateAccount(fallbackUser);
       const fallbackToken = 'mock_jwt_token_' + Date.now();
 
       localStorage.setItem('token', fallbackToken);
@@ -132,8 +141,9 @@ export function AuthProvider({ children }) {
   }, []);
 
   const updateUser = useCallback((updatedUser) => {
-    setUser(updatedUser);
-    localStorage.setItem('user', JSON.stringify(updatedUser));
+    const formatted = saveSeparateAccount(updatedUser);
+    setUser(formatted);
+    localStorage.setItem('user', JSON.stringify(formatted));
   }, []);
 
   const value = {

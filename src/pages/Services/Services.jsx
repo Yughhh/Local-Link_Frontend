@@ -19,7 +19,8 @@ import ServiceCard from '../../components/ServiceCard/ServiceCard';
 import IndiaMap from '../../components/IndiaMap/IndiaMap';
 import Button from '../../components/Button/Button';
 import Loader from '../../components/Loader/Loader';
-import { getNetworkServices, indianServicesCatalog } from '../../data/dummyData';
+import { useAuth } from '../../context/AuthContext';
+import { getNetworkServices, indianServicesCatalog, saveNetworkBooking } from '../../data/dummyData';
 import { formatINR } from '../../data/formatters';
 import { serviceAPI, bookingAPI } from '../../utils/api';
 import './Services.css';
@@ -81,15 +82,25 @@ function Services() {
     fetchServices();
   }, [activeCategory]);
 
-  // Filter nearby local services by distance & local category
+  // Filter nearby local services by distance, search query & local category
   let filteredServices = servicesList;
   if (activeCategory !== 'all') {
     filteredServices = filteredServices.filter(s => s.category === activeCategory);
   }
+  if (searchParamQuery.trim()) {
+    const q = searchParamQuery.toLowerCase().trim();
+    filteredServices = filteredServices.filter(s => 
+      (s.title || s.name || '').toLowerCase().includes(q) ||
+      (s.category || '').toLowerCase().includes(q) ||
+      (s.description || '').toLowerCase().includes(q) ||
+      (s.providerName || s.provider?.name || '').toLowerCase().includes(q) ||
+      (s.area || '').toLowerCase().includes(q)
+    );
+  }
   if (maxDistance === '1km') {
-    filteredServices = filteredServices.filter(s => parseFloat(s.distance) <= 1.2);
+    filteredServices = filteredServices.filter(s => parseFloat(s.distance || '1.0') <= 1.2);
   } else if (maxDistance === '2km') {
-    filteredServices = filteredServices.filter(s => parseFloat(s.distance) <= 2.2);
+    filteredServices = filteredServices.filter(s => parseFloat(s.distance || '1.0') <= 2.2);
   }
 
   const handleBookService = (svc) => {
@@ -99,7 +110,29 @@ function Services() {
 
   const closeBookingModal = () => setSelectedService(null);
 
+  const { user } = useAuth();
+
   const confirmBooking = async () => {
+    const newBookingObj = {
+      id: 'BK-IN' + Math.floor(1000 + Math.random() * 9000),
+      bookingId: 'BK-IN' + Math.floor(1000 + Math.random() * 9000),
+      customerName: user?.name || 'Anshu Kumar',
+      customer: {
+        name: user?.name || 'Anshu Kumar',
+        email: user?.email || 'anshu@gmail.com',
+        phone: user?.phone || '+91 98765 12345',
+        avatar: user?.avatar || null,
+      },
+      providerId: selectedService.providerId || selectedService.provider || selectedService.providerEmail,
+      providerEmail: selectedService.providerEmail,
+      service: selectedService.title || selectedService.name,
+      amount: selectedService.price || '₹349',
+      date: new Date().toISOString().split('T')[0],
+      status: 'Pending',
+    };
+
+    saveNetworkBooking(newBookingObj);
+
     try {
       await bookingAPI.create({
         service: selectedService.title || selectedService.name,

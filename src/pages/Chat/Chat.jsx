@@ -24,7 +24,14 @@ import Navbar from '../../components/Navbar/Navbar';
 import ChatBubble from '../../components/ChatBubble/ChatBubble';
 import Button from '../../components/Button/Button';
 import { useAuth } from '../../context/AuthContext';
-import { workers, initialChats, getNetworkWorkers } from '../../data/dummyData';
+import { 
+  workers, 
+  getNetworkWorkers, 
+  getPersistentChatMessages, 
+  savePersistentChatMessage,
+  editPersistentChatMessage,
+  deletePersistentChatMessage 
+} from '../../data/dummyData';
 import { messageAPI, workerAPI } from '../../utils/api';
 import defaultAvatarImg from '../../assets/images/NoProfilePicture.png';
 import './Chat.css';
@@ -96,7 +103,7 @@ function Chat() {
     fetchWorkerFromAPI();
   }, [id]);
 
-  // Load chat messages once currentWorker is resolved
+  // Load chat messages once currentWorker is resolved (Initially empty by default unless saved)
   useEffect(() => {
     if (!currentWorker) return;
 
@@ -107,52 +114,57 @@ function Chat() {
         if (res.data?.messages?.length) {
           const formatted = res.data.messages.map(m => ({
             id: m._id,
-            sender: m.sender === workerKey ? 'worker' : 'user',
+            createdAt: new Date(m.createdAt).getTime(),
+            sender: String(m.sender) === String(user?._id) ? 'user' : 'worker',
             text: m.text,
             timestamp: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           }));
           setMessages(formatted);
-        } else {
-          setMessages(initialChats[currentWorker.id] || getDefaultChats(currentWorker));
+          return;
         }
       } catch (err) {
-        setMessages(initialChats[currentWorker.id] || getDefaultChats(currentWorker));
+        console.log('Using local/persistent chat storage');
       }
+
+      const persistent = getPersistentChatMessages(currentWorker.id) || 
+                         getPersistentChatMessages(currentWorker._id) || 
+                         getPersistentChatMessages(currentWorker.name);
+      setMessages(persistent || []);
     };
 
     fetchChatHistory();
-  }, [currentWorker]);
+  }, [currentWorker, user]);
 
   // Scroll to bottom on message update
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
-  const getDefaultChats = (workerObj) => [
-    {
-      id: 1,
-      sender: 'worker',
-      text: `Hello! I'm ${workerObj.name}, ${workerObj.profession}. How can I assist you in ${workerObj.area || 'your area'} today?`,
-      timestamp: '10:00 AM'
-    }
-  ];
-
   const handleSend = async (e) => {
     if (e) e.preventDefault();
     if (!inputText.trim() && !attachmentPreview) return;
 
     const currentText = inputText.trim();
+    const msgCreatedAt = Date.now();
+    const msgId = 'msg_' + msgCreatedAt;
+
     const userMessage = {
-      id: Date.now(),
+      id: msgId,
+      createdAt: msgCreatedAt,
       sender: 'user',
       text: attachmentPreview ? `[Photo Attachment] ${currentText}` : currentText,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      timestamp: new Date(msgCreatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
 
     setMessages(prev => [...prev, userMessage]);
     setInputText("");
     setShowEmojis(false);
     setAttachmentPreview(null);
+
+    const workerKey = currentWorker._id || currentWorker.id;
+    savePersistentChatMessage(workerKey, userMessage);
+    savePersistentChatMessage(currentWorker.id, userMessage);
+    savePersistentChatMessage(currentWorker.name, userMessage);
 
     try {
       await messageAPI.sendMessage({
@@ -168,14 +180,54 @@ function Chat() {
     setIsTyping(true);
     setTimeout(() => {
       setIsTyping(false);
+      const replyTime = Date.now();
       const workerResponse = {
-        id: Date.now() + 1,
+        id: 'msg_' + replyTime,
+        createdAt: replyTime,
         sender: 'worker',
         text: getCustomReply(currentWorker, currentText),
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        timestamp: new Date(replyTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       setMessages(prev => [...prev, workerResponse]);
+      savePersistentChatMessage(workerKey, workerResponse);
+      savePersistentChatMessage(currentWorker.id, workerResponse);
+      savePersistentChatMessage(currentWorker.name, workerResponse);
     }, 1400);
+  };
+
+  const handleEditMessage = async (msgId, currentText) => {
+    const newText = window.prompt("Edit your message (Sent within 5 minutes):", currentText);
+    if (!newText || !newText.trim() || newText === currentText) return;
+
+    try {
+      await messageAPI.editMessage(msgId, newText.trim());
+    } catch (err) {
+      console.log('Edited message locally');
+    }
+
+    setMessages(prev => prev.map(m => m.id === msgId ? { ...m, text: newText.trim(), isEdited: true } : m));
+    if (currentWorker) {
+      editPersistentChatMessage(currentWorker.id, msgId, newText.trim());
+      editPersistentChatMessage(currentWorker._id, msgId, newText.trim());
+      editPersistentChatMessage(currentWorker.name, msgId, newText.trim());
+    }
+  };
+
+  const handleDeleteMessage = async (msgId) => {
+    if (!window.confirm("Delete this message? (Sent within 5 minutes)")) return;
+
+    try {
+      await messageAPI.deleteMessage(msgId);
+    } catch (err) {
+      console.log('Deleted message locally');
+    }
+
+    setMessages(prev => prev.filter(m => m.id !== msgId));
+    if (currentWorker) {
+      deletePersistentChatMessage(currentWorker.id, msgId);
+      deletePersistentChatMessage(currentWorker._id, msgId);
+      deletePersistentChatMessage(currentWorker.name, msgId);
+    }
   };
 
   const getCustomReply = (workerObj, query) => {
@@ -248,20 +300,19 @@ function Chat() {
                 return (
                   <button
                     key={w._id || w.id}
-                    className={`provider-chat-item ${isActive ? 'active' : ''}`}
+                    className={`sidebar-provider-item ${isActive ? 'active' : ''}`}
                     onClick={() => navigate(`/chat/${w._id || w.id}`)}
                   >
-                    <div className="item-avatar-wrapper">
-                      <img src={w.image} alt={w.name} className="item-avatar" />
-                      <span className={`item-status-dot ${w.isOpen ? 'online' : 'busy'}`}></span>
+                    <div className="provider-avatar-box">
+                      <img src={w.image} alt={w.name} />
+                      {w.isOpen && <span className="online-indicator"></span>}
                     </div>
-
-                    <div className="item-info">
-                      <div className="item-top-row">
-                        <span className="item-name">{w.name}</span>
-                        <span className="item-distance">{w.distance || '1.2 km'}</span>
+                    <div className="provider-meta">
+                      <div className="name-time-row">
+                        <span className="p-name">{w.name}</span>
+                        <span className="p-time">Live</span>
                       </div>
-                      <span className="item-profession">{w.profession}</span>
+                      <span className="p-sub">{w.profession} • {w.area || 'Lucknow'}</span>
                     </div>
                   </button>
                 );
@@ -269,24 +320,21 @@ function Chat() {
             </div>
           </aside>
 
-          {/* ── Right Main Chat Window ── */}
-          <section className="chat-window-main">
-            {/* Header */}
-            <div className="chat-header-bar glass">
-              <button className="chat-back-mobile-btn" onClick={() => navigate(-1)}>
+          {/* ── Right Main Chat Screen ── */}
+          <section className="chat-main-window">
+
+            {/* Chat Window Header */}
+            <div className="chat-window-header">
+              <button className="btn-back-mobile" onClick={() => navigate('/services')}>
                 <FiArrowLeft />
               </button>
 
-              <img src={currentWorker.image} alt={currentWorker.name} className="chat-header-avatar" />
+              <img src={currentWorker.image} alt={currentWorker.name} className="header-provider-avatar" />
 
-              <div className="chat-header-meta">
-                <div className="name-verified-row">
-                  <h3 className="chat-header-name">{currentWorker.name}</h3>
-                  {currentWorker.verified && (
-                    <span className="verified-shield" title="Aadhaar & KYC Verified Pro">
-                      <FiShield className="shield-icon" /> Verified
-                    </span>
-                  )}
+              <div className="header-provider-details">
+                <div className="name-badge-row">
+                  <h2>{currentWorker.name}</h2>
+                  <span className="verified-badge-pill"><FiShield /> Verified Pro</span>
                 </div>
                 <div className="status-distance-row">
                   <span className="status-pill">
@@ -331,8 +379,9 @@ function Chat() {
               </div>
 
               {messages.length === 0 ? (
-                <div className="chat-empty-state">
-                  <p>Start your conversation with {currentWorker.name}!</p>
+                <div className="chat-empty-state" style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)' }}>
+                  <p style={{ fontSize: '15px', fontWeight: 600, margin: 0 }}>No messages yet with {currentWorker.name}.</p>
+                  <p style={{ fontSize: '13px', marginTop: '6px' }}>Type a message below or use a quick prompt to start chatting!</p>
                 </div>
               ) : (
                 messages.map(msg => (
@@ -342,6 +391,8 @@ function Chat() {
                     isMe={msg.sender === 'user'}
                     providerAvatar={currentWorker.image}
                     userAvatar={user?.avatar || defaultAvatarImg}
+                    onEdit={handleEditMessage}
+                    onDelete={handleDeleteMessage}
                   />
                 ))
               )}

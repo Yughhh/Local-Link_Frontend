@@ -1,8 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { FiHome, FiMapPin, FiUsers, FiPercent, FiHeart, FiUser, FiBell, FiMenu, FiX, FiBriefcase, FiInfo, FiPhoneCall, FiLogIn, FiLogOut, FiPlusCircle } from 'react-icons/fi';
+import { FiHome, FiMapPin, FiUsers, FiPercent, FiHeart, FiUser, FiBell, FiMenu, FiX, FiBriefcase, FiInfo, FiPhoneCall, FiLogIn, FiLogOut, FiPlusCircle, FiCheckCircle } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
-import { locationsList } from '../../data/dummyData';
+import { 
+  locationsList, 
+  getCustomerNotifications,
+  markCustomerNotificationRead,
+  markAllCustomerNotificationsRead 
+} from '../../data/dummyData';
 import logoImg from '../../assets/images/LocalLinkLogo.png';
 import defaultAvatarImg from '../../assets/images/NoProfilePicture.png';
 import './Navbar.css';
@@ -33,6 +38,31 @@ function Navbar() {
     logout();
     navigate('/');
     closeMenu();
+  };
+
+  const [showNotifMenu, setShowNotifMenu] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+
+  useEffect(() => {
+    // Notify only customer accounts (user.role === 'user'); do not notify service provider accounts
+    if (user && user.role === 'user') {
+      const loaded = getCustomerNotifications(user);
+      setNotifications(loaded);
+    } else {
+      setNotifications([]);
+    }
+  }, [user, showNotifMenu]);
+
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  const handleNotificationClick = (notifId) => {
+    markCustomerNotificationRead(user, notifId);
+    setNotifications(prev => prev.map(n => String(n.id) === String(notifId) ? { ...n, read: true } : n));
+  };
+
+  const handleMarkAllRead = () => {
+    markAllCustomerNotificationsRead(user);
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   };
 
   return (
@@ -80,21 +110,77 @@ function Navbar() {
             <NavLink to="/offers" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} onClick={closeMenu}>
               <FiPercent /> Offers
             </NavLink>
-            {(!isAuthenticated || user?.role === 'provider') && (
-              <NavLink to="/become-provider" className={({ isActive }) => `nav-link nav-provider-highlight ${isActive ? 'active' : ''}`} onClick={closeMenu} title="Register as Local Service Provider">
-                <FiPlusCircle /> Become a Provider
+            {(user?.role === 'provider' || user?.role === 'admin') && (
+              <NavLink to="/provider-dashboard" className={({ isActive }) => `nav-link nav-provider-highlight ${isActive ? 'active' : ''}`} onClick={closeMenu} title="Service Provider Panel">
+                <FiBriefcase /> Provider Panel
               </NavLink>
             )}
           </nav>
 
           {/* Right Action Icons */}
-          <div className="navbar-actions">
+          <div className="navbar-actions" style={{ position: 'relative' }}>
             {isAuthenticated ? (
               <>
-                <button className="nav-action-btn notification-btn" title="Notifications">
+                <button 
+                  className="nav-action-btn notification-btn" 
+                  onClick={() => setShowNotifMenu(!showNotifMenu)}
+                  title="Booking Notifications"
+                >
                   <FiBell />
-                  <span className="notification-badge"></span>
+                  {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
                 </button>
+
+                {showNotifMenu && (
+                  <div className="notifications-dropdown-menu glass">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
+                      <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <FiBell style={{ color: 'var(--primary)' }} /> Notifications ({unreadCount} new)
+                      </h4>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {unreadCount > 0 && (
+                          <button 
+                            type="button" 
+                            onClick={handleMarkAllRead}
+                            style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '11px', fontWeight: 700 }}
+                          >
+                            Mark all read
+                          </button>
+                        )}
+                        <button onClick={() => setShowNotifMenu(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '16px' }}><FiX /></button>
+                      </div>
+                    </div>
+
+                    {notifications.length === 0 ? (
+                      <div style={{ fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center', padding: '20px 0' }}>
+                        No booking status updates yet.
+                      </div>
+                    ) : (
+                      notifications.map((n, i) => (
+                        <div 
+                          key={n.id || i} 
+                          onClick={() => handleNotificationClick(n.id)}
+                          style={{ 
+                            padding: '10px 12px', 
+                            borderRadius: '12px',
+                            marginBottom: '6px',
+                            background: n.read ? 'transparent' : 'rgba(99, 102, 241, 0.12)', 
+                            border: n.read ? '1px solid transparent' : '1px solid rgba(99, 102, 241, 0.25)',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease'
+                          }}
+                          title="Tap to mark as read"
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--primary)' }}>{n.title}</div>
+                            {!n.read && <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444', display: 'inline-block' }}></span>}
+                          </div>
+                          <div style={{ fontSize: '12px', color: 'var(--text-main)', margin: '4px 0', lineHeight: 1.4 }}>{n.message}</div>
+                          <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{n.date} {n.read && '• Read'}</div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
 
                 <div className="nav-profile-image" onClick={handleProfileClick} title="My Profile">
                   <img src={user?.avatar || defaultAvatarImg} alt="Profile" />
@@ -138,72 +224,30 @@ function Navbar() {
             <NavLink to="/contact" className="drawer-link" onClick={closeMenu}>
               <FiPhoneCall /> Contact Us
             </NavLink>
-            <NavLink to="/community" className="drawer-link" onClick={closeMenu}>
-              <FiUsers /> Community Forum
-            </NavLink>
-            <NavLink to="/offers" className="drawer-link" onClick={closeMenu}>
-              <FiPercent /> Special Offers
-            </NavLink>
-            {(!isAuthenticated || user?.role === 'provider') && (
-              <NavLink to="/become-provider" className="drawer-link drawer-provider-highlight" onClick={closeMenu}>
-                <FiPlusCircle /> Become a Provider
+
+            {(user?.role === 'provider' || user?.role === 'admin') && (
+              <NavLink to="/provider-dashboard" className="drawer-link drawer-provider-highlight" onClick={closeMenu}>
+                <FiBriefcase /> Service Provider Console
               </NavLink>
             )}
-            <NavLink to="/favorites" className="drawer-link" onClick={closeMenu}>
-              <FiHeart /> Saved Favorites
-            </NavLink>
 
             {isAuthenticated ? (
               <>
-                {user?.role === 'provider' || user?.role === 'admin' ? (
-                  <NavLink to="/provider-dashboard" className="drawer-link" onClick={closeMenu}>
-                    <FiBriefcase /> Provider Dashboard
-                  </NavLink>
-                ) : null}
-                <NavLink to="/profile" className="drawer-link" onClick={closeMenu}>
-                  <FiUser /> Profile ({user?.name || 'User'})
-                </NavLink>
-                <button className="drawer-link drawer-logout-btn" onClick={handleLogout}>
-                  <FiLogOut /> Sign Out
+                <button className="drawer-link" onClick={handleProfileClick}>
+                  <FiUser /> Profile & Account Settings
+                </button>
+                <button className="drawer-link btn-logout" onClick={handleLogout}>
+                  <FiLogOut /> Sign Out ({user?.name})
                 </button>
               </>
             ) : (
-              <>
-                <NavLink to="/login" className="drawer-link" onClick={closeMenu}>
-                  <FiLogIn /> Sign In
-                </NavLink>
-                <NavLink to="/register" className="drawer-link" onClick={closeMenu}>
-                  <FiUser /> Create Account
-                </NavLink>
-              </>
+              <Link to="/login" className="drawer-link btn-login" onClick={closeMenu}>
+                <FiLogIn /> Customer & Provider Sign In
+              </Link>
             )}
           </nav>
         </div>
       )}
-
-      {/* Mobile Bottom Bar */}
-      <nav className="mobile-bottom-nav glass">
-        <NavLink to="/" className={({ isActive }) => `bottom-nav-link ${isActive ? 'active' : ''}`} onClick={closeMenu}>
-          <FiHome className="bottom-nav-icon" />
-          <span>Home</span>
-        </NavLink>
-        <NavLink to="/services" className={({ isActive }) => `bottom-nav-link ${isActive ? 'active' : ''}`} onClick={closeMenu}>
-          <FiBriefcase className="bottom-nav-icon" />
-          <span>Services</span>
-        </NavLink>
-        <NavLink to="/nearby" className={({ isActive }) => `bottom-nav-link ${isActive ? 'active' : ''}`} onClick={closeMenu}>
-          <FiMapPin className="bottom-nav-icon" />
-          <span>Nearby</span>
-        </NavLink>
-        <NavLink to="/community" className={({ isActive }) => `bottom-nav-link ${isActive ? 'active' : ''}`} onClick={closeMenu}>
-          <FiUsers className="bottom-nav-icon" />
-          <span>Forum</span>
-        </NavLink>
-        <NavLink to={isAuthenticated ? "/profile" : "/login"} className={({ isActive }) => `bottom-nav-link ${isActive ? 'active' : ''}`} onClick={closeMenu}>
-          <FiUser className="bottom-nav-icon" />
-          <span>{isAuthenticated ? 'Profile' : 'Login'}</span>
-        </NavLink>
-      </nav>
     </>
   );
 }

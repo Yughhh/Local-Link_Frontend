@@ -69,13 +69,24 @@ function Login() {
       setLoginAttempts(0);
       setLockedUntil(null);
 
+      const loggedUser = result?.user;
+      const userRole = loggedUser?.role;
+
+      // Role-based routing: Provider/Admin -> Provider Dashboard, Customer -> Customer Panel Home
+      let targetPath = '/';
+      if (userRole === 'provider' || userRole === 'admin') {
+        targetPath = '/provider-dashboard';
+      } else {
+        targetPath = '/';
+      }
+
       // Show success popup
-      setSuccessName(result?.user?.name || formData.email.split('@')[0]);
+      setSuccessName(loggedUser?.name || formData.email.split('@')[0]);
       setShowSuccess(true);
 
       // Navigate after the popup is shown
       setTimeout(() => {
-        navigate(from, { replace: true });
+        navigate(targetPath, { replace: true });
       }, 1800);
     } catch (err) {
       const newAttempts = loginAttempts + 1;
@@ -236,7 +247,8 @@ function Login() {
         </div>
 
         <div className="auth-demo-hint">
-          <p><strong>Demo:</strong> demo@localconnect.in / demo123456</p>
+          <p><strong>Provider Login:</strong> provider@localconnect.in / demo123456</p>
+          <p style={{ marginTop: '4px' }}><strong>Customer Login:</strong> customer@localconnect.in / demo123456</p>
         </div>
       </motion.div>
     </div>

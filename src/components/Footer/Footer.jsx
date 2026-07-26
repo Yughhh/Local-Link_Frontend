@@ -41,7 +41,7 @@ function Footer() {
 
           <div className="footer-links-column">
             <h4>For Professionals</h4>
-            <Link to="/become-provider">Become a Provider</Link>
+            <Link to="/provider-dashboard">Provider Console</Link>
             <Link to="/offers">Special Offers</Link>
             <Link to="/contact">Help & Support</Link>
             <Link to="/contact">FAQ & Safety</Link>
