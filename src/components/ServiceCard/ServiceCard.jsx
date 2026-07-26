@@ -121,20 +121,10 @@ function ServiceCard({ service, onBookClick }) {
         <IconComponent />
       </div>
 
-      {/* Top Bar: Icon Logo, Provider Avatar & Badges */}
+      {/* Top Bar: Icon Logo & Badges */}
       <div className="card-header-bar">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div className={`colorful-icon-box ${theme.iconBg}`}>
-            <IconComponent className="service-icon" style={{ color: theme.iconColor }} />
-          </div>
-          {(service.providerAvatar || service.avatar || service.providerImage) && (
-            <img 
-              src={service.providerAvatar || service.avatar || service.providerImage} 
-              alt={service.providerName || 'Provider'} 
-              style={{ width: '38px', height: '38px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--primary-light)', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }} 
-              title={service.providerName ? `Service Provider: ${service.providerName}` : 'Service Provider'}
-            />
-          )}
+        <div className={`colorful-icon-box ${theme.iconBg}`}>
+          <IconComponent className="service-icon" style={{ color: theme.iconColor }} />
         </div>
 
         <div className="header-badges">
