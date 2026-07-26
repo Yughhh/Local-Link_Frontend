@@ -1,17 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { 
-  FiPlusCircle, 
-  FiCheck, 
-  FiX, 
-  FiUserPlus, 
-  FiCheckCircle, 
-  FiMessageSquare, 
-  FiSend, 
-  FiUsers, 
-  FiCalendar, 
-  FiDollarSign, 
+import {
+  FiPlusCircle,
+  FiCheck,
+  FiX,
+  FiUserPlus,
+  FiCheckCircle,
+  FiMessageSquare,
+  FiSend,
+  FiUsers,
+  FiCalendar,
+  FiDollarSign,
   FiShield,
   FiTrash2,
   FiTag,
@@ -24,20 +24,20 @@ import DashboardCard from '../../components/DashboardCard/DashboardCard';
 import Button from '../../components/Button/Button';
 import Loader from '../../components/Loader/Loader';
 import { useAuth } from '../../context/AuthContext';
-import { 
-  bookings as initialBookings, 
+import {
+  bookings as initialBookings,
   getNetworkServices,
-  saveNetworkService, 
+  saveNetworkService,
   saveNetworkWorker,
   deleteNetworkService,
   getNetworkBookings,
   updateNetworkBookingStatus,
-  getPersistentChatMessages, 
+  getPersistentChatMessages,
   savePersistentChatMessage,
   editPersistentChatMessage,
   deletePersistentChatMessage,
   saveCustomerNotification,
-  initialChats 
+  initialChats
 } from '../../data/dummyData';
 import { formatINR } from '../../data/formatters';
 import { bookingAPI, serviceAPI, messageAPI } from '../../utils/api';
@@ -257,8 +257,8 @@ function ProviderDashboard() {
       console.log('Using local persistent chat history');
     }
 
-    const persistent = getPersistentChatMessages(custName) || 
-                       getPersistentChatMessages(custId) || [];
+    const persistent = getPersistentChatMessages(custName) ||
+      getPersistentChatMessages(custId) || [];
 
     const formattedPersistent = persistent.map((m, idx) => ({
       id: m.id || idx,
@@ -405,10 +405,10 @@ function ProviderDashboard() {
     if (b.status !== 'Cancelled') {
       const amt = parseInt((b.amount || '0').replace(/[^0-9]/g, '')) || 0;
       const m = b.date?.includes('Jan') ? 'Jan' :
-                b.date?.includes('Feb') ? 'Feb' :
-                b.date?.includes('Mar') ? 'Mar' :
-                b.date?.includes('Apr') ? 'Apr' :
-                b.date?.includes('May') ? 'May' :
+        b.date?.includes('Feb') ? 'Feb' :
+          b.date?.includes('Mar') ? 'Mar' :
+            b.date?.includes('Apr') ? 'Apr' :
+              b.date?.includes('May') ? 'May' :
                 b.date?.includes('Jun') ? 'Jun' : 'Jul';
       monthlyEarningsMap[m] = (monthlyEarningsMap[m] || 0) + amt;
     }
@@ -430,9 +430,9 @@ function ProviderDashboard() {
             <p className="dashboard-subtitle">Create service packages, track customer hiring requests, and chat directly with customers.</p>
           </div>
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-            <Button variant="gradient" onClick={() => setShowModal(true)} icon={FiPlusCircle}>
+            {/* <Button variant="gradient" onClick={() => setShowModal(true)} icon={FiPlusCircle}>
               + Create New Service Package
-            </Button>
+            </Button> */}
           </div>
         </div>
 
@@ -440,7 +440,7 @@ function ProviderDashboard() {
         <AnimatePresence>
           {showModal && (
             <div className="modal-backdrop" onClick={() => setShowModal(false)}>
-              <motion.div 
+              <motion.div
                 className="post-service-modal glass"
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
@@ -464,12 +464,12 @@ function ProviderDashboard() {
                   <form onSubmit={handlePublishService} className="post-service-form">
                     <div className="form-group">
                       <label>Service Package Title *</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         placeholder="e.g. 3BHK Full Apartment Deep Cleaning & Sanitization"
                         value={svcTitle}
                         onChange={(e) => setSvcTitle(e.target.value)}
-                        required 
+                        required
                       />
                     </div>
 
@@ -493,13 +493,13 @@ function ProviderDashboard() {
                           <span style={{ padding: '0 14px', fontSize: '16px', fontWeight: 800, color: 'var(--primary)', background: 'rgba(99, 102, 241, 0.12)', borderRight: '1px solid var(--border-color)', height: '42px', display: 'flex', alignItems: 'center', userSelect: 'none' }}>
                             ₹
                           </span>
-                          <input 
-                            type="text" 
+                          <input
+                            type="text"
                             placeholder="499"
                             value={svcPrice}
                             onChange={(e) => setSvcPrice(e.target.value.replace(/[^0-9]/g, ''))}
                             style={{ border: 'none', background: 'transparent', width: '100%', padding: '10px 14px', outline: 'none', color: 'var(--text-main)', fontSize: '14px', fontWeight: 600 }}
-                            required 
+                            required
                           />
                         </div>
                       </div>
@@ -507,19 +507,19 @@ function ProviderDashboard() {
 
                     <div className="form-group mt-3">
                       <label>Service Location / Area *</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         placeholder="e.g. Indiranagar, Bengaluru"
                         value={svcArea}
                         onChange={(e) => setSvcArea(e.target.value)}
-                        required 
+                        required
                       />
                     </div>
 
                     <div className="form-group mt-3">
                       <label>Service Description & Details</label>
-                      <textarea 
-                        rows="3" 
+                      <textarea
+                        rows="3"
                         placeholder="Explain what is included in this service package..."
                         value={svcDesc}
                         onChange={(e) => setSvcDesc(e.target.value)}
@@ -545,7 +545,7 @@ function ProviderDashboard() {
         <AnimatePresence>
           {showChatModal && activeCustomer && (
             <div className="modal-backdrop" onClick={() => setShowChatModal(false)}>
-              <motion.div 
+              <motion.div
                 className="provider-chat-modal-box glass"
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
@@ -586,16 +586,16 @@ function ProviderDashboard() {
                             <span className="provider-chat-timestamp">{m.timestamp}</span>
                             {m.sender === 'provider' && isWithin5Mins && (
                               <div style={{ display: 'flex', gap: '6px' }}>
-                                <button 
-                                  type="button" 
+                                <button
+                                  type="button"
                                   onClick={() => handleEditProviderMessage(m.id, m.text)}
                                   style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', fontSize: '11px', padding: 0 }}
                                   title="Edit message (Within 5 mins)"
                                 >
                                   <FiEdit3 />
                                 </button>
-                                <button 
-                                  type="button" 
+                                <button
+                                  type="button"
                                   onClick={() => handleDeleteProviderMessage(m.id)}
                                   style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', fontSize: '11px', padding: 0 }}
                                   title="Delete message (Within 5 mins)"
@@ -614,11 +614,11 @@ function ProviderDashboard() {
 
                 {/* Chat Input Bar */}
                 <form className="provider-chat-input-bar" onSubmit={handleSendProviderMessage}>
-                  <input 
-                    type="text" 
-                    placeholder={`Message ${activeCustomer.name}...`} 
-                    value={chatInputText} 
-                    onChange={(e) => setChatInputText(e.target.value)} 
+                  <input
+                    type="text"
+                    placeholder={`Message ${activeCustomer.name}...`}
+                    value={chatInputText}
+                    onChange={(e) => setChatInputText(e.target.value)}
                   />
                   <button type="submit" className="provider-chat-send-btn" title="Send Message to Customer">
                     <FiSend />
@@ -655,8 +655,8 @@ function ProviderDashboard() {
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px', marginTop: '16px' }}>
             {publishedServices.map((svc) => (
-              <div 
-                key={svc._id || svc.id} 
+              <div
+                key={svc._id || svc.id}
                 style={{
                   background: 'var(--bg-soft)',
                   border: '1px solid var(--border-color)',
@@ -689,8 +689,8 @@ function ProviderDashboard() {
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid var(--border-color)', paddingTop: '10px' }}>
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     onClick={() => handleDeleteService(svc.id || svc._id)}
                     style={{
                       display: 'inline-flex',
@@ -721,7 +721,7 @@ function ProviderDashboard() {
           <div className="analytics-chart-box glass">
             <h3>Monthly Revenue Breakdown (INR ₹)</h3>
             <p className="chart-subtitle">Calculated dynamically from your authorized customer bookings.</p>
-            
+
             <div className="chart-bar-canvas">
               {dynamicMonthlyEarnings.map((data, index) => {
                 const maxAmount = 100000;
@@ -794,9 +794,9 @@ function ProviderDashboard() {
                         <td>
                           <div className="table-actions-btns">
                             {/* Dedicated Chat Button for Service Provider to Chat with Customer */}
-                            <button 
-                              type="button" 
-                              className="btn-action-chat" 
+                            <button
+                              type="button"
+                              className="btn-action-chat"
                               onClick={() => handleOpenCustomerChat(booking)}
                               title={`Chat with ${custName}`}
                             >
@@ -805,15 +805,15 @@ function ProviderDashboard() {
 
                             {booking.status === 'Pending' && (
                               <>
-                                <button 
-                                  className="btn-action-ok" 
+                                <button
+                                  className="btn-action-ok"
                                   onClick={() => handleUpdateStatus(bId, 'Confirmed')}
                                   title="Accept Booking Request"
                                 >
                                   <FiCheck /> Accept
                                 </button>
-                                <button 
-                                  className="btn-action-no" 
+                                <button
+                                  className="btn-action-no"
                                   onClick={() => handleUpdateStatus(bId, 'Cancelled')}
                                   title="Decline Booking Request"
                                 >
@@ -822,9 +822,9 @@ function ProviderDashboard() {
                               </>
                             )}
                             {booking.status === 'Confirmed' && (
-                              <Button 
-                                variant="primary" 
-                                size="sm" 
+                              <Button
+                                variant="primary"
+                                size="sm"
                                 onClick={() => handleUpdateStatus(bId, 'Completed')}
                               >
                                 Mark Done
