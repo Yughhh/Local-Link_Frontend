@@ -266,7 +266,6 @@ function Services() {
                   <h4>{item.title}</h4>
                   <p>{item.description}</p>
                   <div className="digital-card-footer">
-                    {item.price && <span className="price-tag">{item.price}</span>}
                     <Button variant="primary" size="sm" onClick={() => handleBookService({ title: item.title, price: item.price })}>
                       Inquire Quote
                     </Button>

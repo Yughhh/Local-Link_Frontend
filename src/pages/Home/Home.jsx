@@ -440,7 +440,6 @@ function Home() {
                 <h4>{svc.title}</h4>
                 <p>{svc.description}</p>
                 <div className="spotlight-footer">
-                  {svc.price && <span className="spotlight-price">{svc.price}</span>}
                   <Button variant="primary" size="sm" onClick={() => navigate('/services')}>
                     Learn More
                   </Button>

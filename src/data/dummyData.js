@@ -361,7 +361,6 @@ export const indianServicesCatalog = [
     category: 'Digital Services',
     icon: 'FiCode',
     description: 'Custom, fast, and SEO-optimized web applications tailored for Indian MSMEs, D2C brands, and corporate enterprises.',
-    price: 'Starting at ₹14,999',
     features: ['Responsive UI/UX', 'Razorpay & UPI Payment Integration', 'WhatsApp Chat Widget', 'Hindi & Regional Language Support']
   },
   {
@@ -370,7 +369,6 @@ export const indianServicesCatalog = [
     category: 'Digital Services',
     icon: 'FiShoppingBag',
     description: 'Launch your online store with local payment gateways (UPI, Paytm, PhonePe), GST invoicing, and Indian logistics APIs.',
-    price: 'Starting at ₹19,999',
     features: ['Product Catalog Management', 'GST Tax Invoice Generator', 'Shiprocket/Delhivery Integration', 'Mobile Responsive Store']
   },
   {
@@ -387,7 +385,6 @@ export const indianServicesCatalog = [
     category: 'Digital Services',
     icon: 'FiSmartphone',
     description: 'Native & cross-platform Flutter/React Native mobile apps tailored for Indian consumers with offline-first support.',
-    price: 'Starting at ₹29,999',
     features: ['Android & iOS Apps', 'Push Notifications', 'OTP SMS Login (Firebase/Msg91)', 'Fast Performance']
   },
   {
@@ -396,7 +393,6 @@ export const indianServicesCatalog = [
     category: 'Marketing',
     icon: 'FiSearch',
     description: 'Rank on top of Google searches for local Indian keywords in major metros and regional cities.',
-    price: 'Starting at ₹7,999/mo',
     features: ['On-Page & Technical SEO', 'Local SEO & Map Pack Ranking', 'Keyword Strategy in English & Hindi', 'Monthly Ranking Reports']
   },
   {
@@ -405,7 +401,6 @@ export const indianServicesCatalog = [
     category: 'Enterprise',
     icon: 'FiCloud',
     description: 'AWS / Google Cloud infrastructure migration, server setup, data security, and 99.9% uptime management.',
-    price: 'Starting at ₹15,000',
     features: ['AWS / GCP Cloud Architecture', 'Automated Backups', 'SSL & Cybersecurity Hardening', '24x7 Monitoring']
   }
 ];
