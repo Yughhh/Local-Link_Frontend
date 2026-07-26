@@ -55,7 +55,7 @@ function ProviderDashboard() {
   const [showModal, setShowModal] = useState(false);
   const [svcTitle, setSvcTitle] = useState('');
   const [svcCategory, setSvcCategory] = useState('electrician');
-  const [svcPrice, setSvcPrice] = useState('₹499');
+  const [svcPrice, setSvcPrice] = useState('499');
   const [svcArea, setSvcArea] = useState('Alambagh, Lucknow');
   const [svcDesc, setSvcDesc] = useState('');
   const [postSuccess, setPostSuccess] = useState(false);
@@ -489,13 +489,19 @@ function ProviderDashboard() {
 
                       <div className="form-group">
                         <label>Service Price (Rupees) *</label>
-                        <input 
-                          type="text" 
-                          placeholder="e.g. ₹1,499"
-                          value={svcPrice}
-                          onChange={(e) => setSvcPrice(e.target.value)}
-                          required 
-                        />
+                        <div style={{ display: 'flex', alignItems: 'center', background: 'var(--bg-soft)', border: '1px solid var(--border-color)', borderRadius: '12px', overflow: 'hidden' }}>
+                          <span style={{ padding: '0 14px', fontSize: '16px', fontWeight: 800, color: 'var(--primary)', background: 'rgba(99, 102, 241, 0.12)', borderRight: '1px solid var(--border-color)', height: '42px', display: 'flex', alignItems: 'center', userSelect: 'none' }}>
+                            ₹
+                          </span>
+                          <input 
+                            type="text" 
+                            placeholder="499"
+                            value={svcPrice}
+                            onChange={(e) => setSvcPrice(e.target.value.replace(/[^0-9]/g, ''))}
+                            style={{ border: 'none', background: 'transparent', width: '100%', padding: '10px 14px', outline: 'none', color: 'var(--text-main)', fontSize: '14px', fontWeight: 600 }}
+                            required 
+                          />
+                        </div>
                       </div>
                     </div>
 

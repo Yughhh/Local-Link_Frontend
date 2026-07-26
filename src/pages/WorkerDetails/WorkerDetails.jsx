@@ -294,7 +294,7 @@ function WorkerDetails() {
               <Button variant="primary" onClick={() => window.location.href = `tel:${worker.phone}`} icon={FiPhone}>
                 Call {worker.phone || '+91 98765 43210'}
               </Button>
-              <Button variant="outline" onClick={() => navigate(`/chat/${worker._id || id}`)} icon={FiMessageSquare}>
+              <Button variant="outline" onClick={() => navigate(`/chat?workerId=${encodeURIComponent(worker._id || worker.id || id)}&name=${encodeURIComponent(name)}&avatar=${encodeURIComponent(worker.avatar || defaultAvatarImg)}`)} icon={FiMessageSquare}>
                 Chat
               </Button>
               <Button 

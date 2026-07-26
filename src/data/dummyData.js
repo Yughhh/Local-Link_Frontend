@@ -1,3 +1,4 @@
+import defaultAvatarImg from '../assets/images/NoProfilePicture.png';
 import electricianImg from '../assets/images/worker_electrician.jpg';
 import salonImg from '../assets/images/worker_salon.jpg';
 import plumberImg from '../assets/images/worker_plumber_amit.png';
@@ -6,7 +7,7 @@ import rohanImg from '../assets/images/worker_developer_rohan.png';
 import ananyaImg from '../assets/images/worker_tutor_ananya.png';
 import heroBannerImg from '../assets/images/hero_banner.jpg';
 
-export { heroBannerImg, electricianImg, salonImg, plumberImg, sunitaImg, rohanImg, ananyaImg };
+export { heroBannerImg, electricianImg, salonImg, plumberImg, sunitaImg, rohanImg, ananyaImg, defaultAvatarImg };
 
 export const locationsList = [
   "Lucknow, UP",
@@ -796,7 +797,12 @@ export const saveSeparateAccount = (userObj) => {
   }
 
   accounts = accounts.filter(a => a.email.toLowerCase() !== userObj.email.toLowerCase());
-  const formattedUser = { ...userObj, role: isProvider ? 'provider' : 'user', accountType: isProvider ? 'provider' : 'customer' };
+  const formattedUser = { 
+    ...userObj, 
+    role: isProvider ? 'provider' : 'user', 
+    accountType: isProvider ? 'provider' : 'customer',
+    avatar: userObj.avatar || defaultAvatarImg 
+  };
   accounts.unshift(formattedUser);
   localStorage.setItem(storageKey, JSON.stringify(accounts));
   return formattedUser;
@@ -812,7 +818,7 @@ export const findSeparateAccount = (email) => {
     try {
       const providers = JSON.parse(providersStr);
       const match = providers.find(p => p.email.toLowerCase() === targetEmail);
-      if (match) return { ...match, role: 'provider', accountType: 'provider' };
+      if (match) return { ...match, role: 'provider', accountType: 'provider', avatar: match.avatar || defaultAvatarImg };
     } catch (e) {}
   }
 
@@ -822,7 +828,7 @@ export const findSeparateAccount = (email) => {
     try {
       const customers = JSON.parse(customersStr);
       const match = customers.find(c => c.email.toLowerCase() === targetEmail);
-      if (match) return { ...match, role: 'user', accountType: 'customer' };
+      if (match) return { ...match, role: 'user', accountType: 'customer', avatar: match.avatar || defaultAvatarImg };
     } catch (e) {}
   }
 
@@ -833,7 +839,8 @@ export const findSeparateAccount = (email) => {
       name: email.split('@')[0] || 'Service Provider',
       email,
       role: 'provider',
-      accountType: 'provider'
+      accountType: 'provider',
+      avatar: defaultAvatarImg
     };
   }
 
@@ -842,7 +849,8 @@ export const findSeparateAccount = (email) => {
     name: email.split('@')[0] || 'Customer',
     email,
     role: 'user',
-    accountType: 'customer'
+    accountType: 'customer',
+    avatar: defaultAvatarImg
   };
 };
 

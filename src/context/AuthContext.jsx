@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authAPI } from '../utils/api';
-import { saveSeparateAccount, findSeparateAccount } from '../data/dummyData';
+import { saveSeparateAccount, findSeparateAccount, defaultAvatarImg } from '../data/dummyData';
 
 const AuthContext = createContext(null);
 
@@ -74,7 +74,7 @@ export function AuthProvider({ children }) {
           role: storedUser?.role || (email.includes('provider') ? 'provider' : 'user'),
           accountType: storedUser?.accountType || (email.includes('provider') ? 'provider' : 'customer'),
           city: 'Lucknow, UP',
-          avatar: null,
+          avatar: storedUser?.avatar || defaultAvatarImg,
           notifications: { emailAlerts: true, pushAlerts: true, smsAlerts: true },
         };
 
@@ -117,7 +117,7 @@ export function AuthProvider({ children }) {
         role: formData.role || 'user',
         accountType: formData.role === 'provider' ? 'provider' : 'customer',
         city: 'Lucknow, UP',
-        avatar: null,
+        avatar: formData.avatar || defaultAvatarImg,
         notifications: { emailAlerts: true, pushAlerts: true, smsAlerts: true },
       };
 

@@ -33,7 +33,7 @@ function Profile() {
     address: authUser?.address || 'House #45, Sector B, Alambagh, Lucknow, Uttar Pradesh 226005',
     city: authUser?.city || 'Lucknow, UP',
     role: authUser?.role || 'Customer',
-    avatar: authUser?.avatar || null,
+    avatar: authUser?.avatar || defaultAvatarImg,
     notifications: authUser?.notifications || {
       emailAlerts: true,
       pushAlerts: true,

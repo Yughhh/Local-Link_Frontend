@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FiArrowLeft,
@@ -27,6 +27,7 @@ import { useAuth } from '../../context/AuthContext';
 import { 
   workers, 
   getNetworkWorkers, 
+  getNetworkServices,
   getPersistentChatMessages, 
   savePersistentChatMessage,
   editPersistentChatMessage,
@@ -46,22 +47,76 @@ const quickPrompts = [
 ];
 
 function Chat() {
-  const { id } = useParams();
+  const { id: routeId } = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  // All workers from local + custom/created profiles
-  const allNetworkWorkers = getNetworkWorkers();
+  const targetId = routeId || searchParams.get('workerId') || searchParams.get('id');
+  const targetName = searchParams.get('name') || searchParams.get('workerName');
+  const targetAvatar = searchParams.get('avatar');
 
-  // Resolve the current worker by matching the route :id against both id and _id fields
-  const findWorkerById = (targetId) => {
-    return allNetworkWorkers.find(w =>
-      String(w.id) === String(targetId) ||
-      String(w._id) === String(targetId)
-    );
+  // Unified contacts directory combining network workers and published service providers
+  const allNetworkWorkers = getNetworkWorkers();
+  const networkServices = getNetworkServices();
+
+  const extraProvidersFromServices = networkServices
+    .filter(s => s.providerName || s.title || s.name)
+    .map(s => ({
+      id: s.providerId || s.provider || s.id || s._id,
+      _id: s.providerId || s.provider || s._id || s.id,
+      name: s.providerName || s.name || s.title || 'Service Provider',
+      profession: s.title || s.name || 'Service Specialist',
+      avatar: s.providerAvatar || s.avatar || defaultAvatarImg,
+      phone: s.phone || '+91 98765 43210',
+      rating: s.rating || 5.0,
+      reviewsCount: s.reviewsCount || 1,
+      area: s.area || 'Lucknow, UP',
+      isOnline: true
+    }));
+
+  const contactsMap = new Map();
+  [...allNetworkWorkers, ...extraProvidersFromServices].forEach(w => {
+    const key = String(w._id || w.id || w.name).toLowerCase();
+    if (!contactsMap.has(key)) {
+      contactsMap.set(key, w);
+    }
+  });
+
+  const unifiedContactsList = Array.from(contactsMap.values());
+
+  const findWorkerTarget = (tId, tName) => {
+    if (tId) {
+      const match = unifiedContactsList.find(w =>
+        String(w.id) === String(tId) ||
+        String(w._id) === String(tId)
+      );
+      if (match) return match;
+    }
+    if (tName) {
+      const matchName = unifiedContactsList.find(w =>
+        w.name.toLowerCase() === tName.toLowerCase()
+      );
+      if (matchName) return matchName;
+    }
+    if (tId || tName) {
+      return {
+        id: tId || 'w_' + Date.now(),
+        _id: tId || 'w_' + Date.now(),
+        name: tName || 'Service Provider',
+        profession: 'Verified Service Provider',
+        avatar: targetAvatar || defaultAvatarImg,
+        phone: '+91 98765 43210',
+        rating: 5.0,
+        reviewsCount: 1,
+        area: 'Lucknow, UP',
+        isOnline: true
+      };
+    }
+    return unifiedContactsList[0] || workers[0];
   };
 
-  const [currentWorker, setCurrentWorker] = useState(() => findWorkerById(id) || null);
+  const [currentWorker, setCurrentWorker] = useState(() => findWorkerTarget(targetId, targetName));
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -71,39 +126,21 @@ function Chat() {
 
   const messagesEndRef = useRef(null);
 
-  // Filter sidebar workers using full network list
-  const filteredWorkers = allNetworkWorkers.filter(w =>
+  // Update target worker when route parameters change
+  useEffect(() => {
+    const resolved = findWorkerTarget(targetId, targetName);
+    if (resolved) {
+      setCurrentWorker(resolved);
+    }
+  }, [routeId, targetId, targetName]);
+
+  // Filter sidebar contacts
+  const filteredWorkers = unifiedContactsList.filter(w =>
     w.name.toLowerCase().includes(sidebarSearch.toLowerCase()) ||
-    w.profession.toLowerCase().includes(sidebarSearch.toLowerCase())
+    (w.profession && w.profession.toLowerCase().includes(sidebarSearch.toLowerCase()))
   );
 
-  // Resolve current worker: first try local data, then fetch from backend API
-  useEffect(() => {
-    const localMatch = findWorkerById(id);
-    if (localMatch) {
-      setCurrentWorker(localMatch);
-      return;
-    }
-
-    // Worker not found locally — fetch from backend API by id
-    const fetchWorkerFromAPI = async () => {
-      try {
-        const res = await workerAPI.getById(id);
-        if (res.data?.worker) {
-          setCurrentWorker(res.data.worker);
-          return;
-        }
-      } catch (err) {
-        console.log('Worker API lookup failed for chat, using fallback');
-      }
-      // Final fallback: use first worker only if nothing else matched
-      setCurrentWorker(allNetworkWorkers[0] || workers[0]);
-    };
-
-    fetchWorkerFromAPI();
-  }, [id]);
-
-  // Load chat messages once currentWorker is resolved (Initially empty by default unless saved)
+  // Load chat messages when currentWorker updates
   useEffect(() => {
     if (!currentWorker) return;
 
@@ -123,7 +160,7 @@ function Chat() {
           return;
         }
       } catch (err) {
-        console.log('Using local/persistent chat storage');
+        console.log('Using persistent local chat storage');
       }
 
       const persistent = getPersistentChatMessages(currentWorker.id) || 
@@ -238,10 +275,18 @@ function Chat() {
     if (q.includes('cost') || q.includes('price') || q.includes('estimate') || q.includes('charge')) {
       return `My base consultation rate is ${workerObj.pricePerHour || '₹399'}. For custom work, I can inspect the site and provide a final transparent estimate.`;
     }
-    if (q.includes('urgent') || q.includes('emergency')) {
-      return `I handle emergency requests! I'm located near ${workerObj.area || 'your neighborhood'} (${workerObj.distance || '1.2 km'}) and can reach you in under 20 mins.`;
+    if (q.includes('location') || q.includes('address') || q.includes('reach') || q.includes('where')) {
+      return `I am located in ${workerObj.area || 'Alambagh, Lucknow'}. I can reach your doorstep within 25-40 minutes after booking confirmation.`;
     }
-    return `Thanks for reaching out! I've received your note and can get started promptly. Feel free to call me directly if it's urgent!`;
+    if (q.includes('urgent') || q.includes('emergency') || q.includes('leak') || q.includes('power')) {
+      return `Understood! I treat emergency service requests with top priority. Go ahead and confirm the booking and I will dispatch immediately!`;
+    }
+    return `Hello! Thanks for reaching out to ${workerObj.name}. How can I assist you with your service requirements today?`;
+  };
+
+  const handleSelectContact = (workerObj) => {
+    setCurrentWorker(workerObj);
+    navigate(`/chat/${workerObj._id || workerObj.id}`);
   };
 
   const handleQuickPromptClick = (promptText) => {
@@ -253,117 +298,115 @@ function Chat() {
   };
 
   const handleSimulateAttachment = () => {
-    setAttachmentPreview("service_site_photo.jpg");
+    setAttachmentPreview("Service_Site_Photo.jpg (1.4 MB)");
   };
 
-  // Show loading state while worker is being resolved from API
   if (!currentWorker) {
     return (
       <div className="chat-page-wrapper">
         <Navbar />
-        <main className="chat-main-content container">
-          <div className="chat-app-card glass" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px' }}>
-            <p style={{ color: 'var(--text-muted)', fontSize: '16px' }}>Loading chat...</p>
-          </div>
+        <main className="container" style={{ padding: '80px 0', textAlign: 'center' }}>
+          <h3>No provider selected</h3>
+          <Link to="/nearby">Browse Nearby Service Providers</Link>
         </main>
       </div>
     );
   }
 
+  const workerAvatar = currentWorker.avatar || currentWorker.image || currentWorker.providerAvatar || defaultAvatarImg;
+
   return (
     <div className="chat-page-wrapper">
       <Navbar />
 
-      <main className="chat-main-content container">
-        <div className="chat-app-card glass">
-
-          {/* ── Left Sidebar: Provider Conversations List ── */}
+      <main className="chat-main-container container">
+        <div className="chat-layout-grid glass">
+          
+          {/* Left Sidebar: Contacts List */}
           <aside className="chat-sidebar">
             <div className="sidebar-header">
-              <h3>Local Conversations</h3>
-              <div className="sidebar-search-box">
-                <FiSearch className="search-icon" />
-                <input
-                  type="text"
-                  placeholder="Search providers..."
-                  value={sidebarSearch}
-                  onChange={(e) => setSidebarSearch(e.target.value)}
-                />
-              </div>
+              <h3>Service Chats</h3>
+              <span className="active-badge">{unifiedContactsList.length} Pros</span>
             </div>
 
-            <div className="providers-list-scroll">
-              {filteredWorkers.map((w) => {
-                const wKey = String(w._id || w.id);
-                const currentKey = String(currentWorker._id || currentWorker.id);
-                const isActive = wKey === currentKey;
+            <div className="sidebar-search-box">
+              <FiSearch className="search-icon" />
+              <input
+                type="text"
+                placeholder="Search provider name or service..."
+                value={sidebarSearch}
+                onChange={(e) => setSidebarSearch(e.target.value)}
+              />
+            </div>
+
+            <div className="contacts-scroll-list">
+              {filteredWorkers.map(w => {
+                const isSelected = String(w.id) === String(currentWorker.id) || String(w._id) === String(currentWorker._id);
+                const contactAvatar = w.avatar || w.image || w.providerAvatar || defaultAvatarImg;
                 return (
-                  <button
+                  <div
                     key={w._id || w.id}
-                    className={`sidebar-provider-item ${isActive ? 'active' : ''}`}
-                    onClick={() => navigate(`/chat/${w._id || w.id}`)}
+                    className={`contact-item-row ${isSelected ? 'active' : ''}`}
+                    onClick={() => handleSelectContact(w)}
                   >
-                    <div className="provider-avatar-box">
-                      <img src={w.image} alt={w.name} />
-                      {w.isOpen && <span className="online-indicator"></span>}
+                    <div className="contact-avatar-wrapper">
+                      <img src={contactAvatar} alt={w.name} />
+                      {w.isOnline && <span className="online-indicator"></span>}
                     </div>
-                    <div className="provider-meta">
-                      <div className="name-time-row">
-                        <span className="p-name">{w.name}</span>
-                        <span className="p-time">Live</span>
+                    <div className="contact-info">
+                      <div className="contact-name-row">
+                        <span className="contact-name">{w.name}</span>
+                        <span className="contact-rate">{w.pricePerHour || '₹399'}</span>
                       </div>
-                      <span className="p-sub">{w.profession} • {w.area || 'Lucknow'}</span>
+                      <span className="contact-subtitle">{w.profession}</span>
                     </div>
-                  </button>
+                  </div>
                 );
               })}
             </div>
           </aside>
 
-          {/* ── Right Main Chat Screen ── */}
-          <section className="chat-main-window">
-
-            {/* Chat Window Header */}
+          {/* Right Main Panel: Active Chat Thread */}
+          <section className="chat-active-window">
+            
+            {/* Header Top Bar */}
             <div className="chat-window-header">
-              <button className="btn-back-mobile" onClick={() => navigate('/services')}>
-                <FiArrowLeft />
-              </button>
+              <div className="worker-header-info">
+                <button type="button" className="btn-back-mobile" onClick={() => navigate('/nearby')}>
+                  <FiArrowLeft />
+                </button>
 
-              <img src={currentWorker.image} alt={currentWorker.name} className="header-provider-avatar" />
-
-              <div className="header-provider-details">
-                <div className="name-badge-row">
-                  <h2>{currentWorker.name}</h2>
-                  <span className="verified-badge-pill"><FiShield /> Verified Pro</span>
+                <div className="avatar-header-box">
+                  <img src={workerAvatar} alt={currentWorker.name} />
+                  <span className="online-pulse-dot"></span>
                 </div>
-                <div className="status-distance-row">
-                  <span className="status-pill">
-                    <span className={`dot ${currentWorker.isOpen ? 'online' : 'busy'}`}></span>
-                    {currentWorker.isOpen ? 'Active Now' : 'Busy'}
-                  </span>
-                  <span className="dot-separator">•</span>
-                  <span className="distance-pill">
-                    <FiMapPin className="pin-icon" /> {currentWorker.area || 'Indiranagar'} ({currentWorker.distance || '1.2 km'})
-                  </span>
+
+                <div>
+                  <h3 className="header-worker-name">{currentWorker.name}</h3>
+                  <div className="header-meta-row">
+                    <span className="pro-tag">{currentWorker.profession}</span>
+                    <span className="meta-dot">•</span>
+                    <span className="location-tag"><FiMapPin /> {currentWorker.area || 'Lucknow'}</span>
+                    <span className="meta-dot">•</span>
+                    <span className="rating-tag">⭐ {currentWorker.rating || '5.0'}</span>
+                  </div>
                 </div>
               </div>
 
-              {/* Action Buttons in Header */}
-              <div className="chat-header-actions">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="btn-header-call"
-                  onClick={() => window.location.href = `tel:${currentWorker.phone || '+91 98765 43210'}`}
+              <div className="header-action-buttons">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
                   icon={FiPhone}
+                  onClick={() => window.location.href = `tel:${currentWorker.phone || '+91 98765 43210'}`}
                 >
                   Call
                 </Button>
-                <Button
-                  variant="gradient"
-                  size="sm"
-                  onClick={() => navigate(`/worker/${currentWorker._id || currentWorker.id}`)}
+                <Button 
+                  variant="primary" 
+                  size="sm" 
                   icon={FiCalendar}
+                  onClick={() => navigate(`/worker/${currentWorker._id || currentWorker.id}`)}
                 >
                   Book Service
                 </Button>
@@ -375,13 +418,13 @@ function Chat() {
               {/* Privacy Trust Banner */}
               <div className="chat-trust-banner">
                 <FiCheckCircle className="trust-icon" />
-                <span>End-to-end local encrypted connection with <strong>{currentWorker.name}</strong></span>
+                <span>End-to-end encrypted connection with <strong>{currentWorker.name}</strong></span>
               </div>
 
               {messages.length === 0 ? (
                 <div className="chat-empty-state" style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)' }}>
                   <p style={{ fontSize: '15px', fontWeight: 600, margin: 0 }}>No messages yet with {currentWorker.name}.</p>
-                  <p style={{ fontSize: '13px', marginTop: '6px' }}>Type a message below or use a quick prompt to start chatting!</p>
+                  <p style={{ fontSize: '13px', marginTop: '6px' }}>Type a message below or click a quick prompt to start chatting!</p>
                 </div>
               ) : (
                 messages.map(msg => (
@@ -389,7 +432,7 @@ function Chat() {
                     key={msg.id}
                     message={msg}
                     isMe={msg.sender === 'user'}
-                    providerAvatar={currentWorker.image}
+                    providerAvatar={workerAvatar}
                     userAvatar={user?.avatar || defaultAvatarImg}
                     onEdit={handleEditMessage}
                     onDelete={handleDeleteMessage}
@@ -399,7 +442,7 @@ function Chat() {
 
               {isTyping && (
                 <div className="worker-typing-box">
-                  <img src={currentWorker.image} alt="Typing..." className="typing-avatar" />
+                  <img src={workerAvatar} alt="Typing..." className="typing-avatar" />
                   <div className="typing-bubble">
                     <span className="typing-text">{currentWorker.name.split(' ')[0]} is typing</span>
                     <div className="typing-dots">
