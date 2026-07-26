@@ -66,9 +66,14 @@ function Services() {
       const netSvcs = getNetworkServices();
       try {
         const res = await serviceAPI.getAll({ category: activeCategory !== 'all' ? activeCategory : undefined });
-        if (res.data?.services?.length) {
-          const customOnly = netSvcs.filter(s => typeof s.id === 'string');
-          setServicesList([...customOnly, ...res.data.services]);
+        if (res.data?.services) {
+          const merged = [...res.data.services, ...netSvcs];
+          const uniqueMap = new Map();
+          merged.forEach(s => {
+            const key = String(s._id || s.id);
+            if (!uniqueMap.has(key)) uniqueMap.set(key, s);
+          });
+          setServicesList(Array.from(uniqueMap.values()));
         } else {
           setServicesList(netSvcs);
         }
