@@ -46,8 +46,9 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = useCallback(async (email, password) => {
+    const cleanEmail = (email || '').toLowerCase().trim();
     try {
-      const res = await authAPI.login({ email, password });
+      const res = await authAPI.login({ email: cleanEmail, password });
       const { token: newToken, user: userData } = res.data;
 
       const formattedUser = saveSeparateAccount(userData);
@@ -58,21 +59,21 @@ export function AuthProvider({ children }) {
 
       return { ...res.data, user: formattedUser };
     } catch (err) {
-      // If authentication failed (401), propagate error
-      if (err.response?.status === 401) {
+      // If authentication failed with 401 response from server, propagate error
+      if (err.response && err.response.status === 401) {
         throw err;
       }
       // If network error/backend offline, look up separate account storage
       if (!err.response) {
         console.warn('Backend server offline. Using separate account storage lookup...');
-        const storedUser = findSeparateAccount(email);
+        const storedUser = findSeparateAccount(cleanEmail);
         const fallbackUser = {
           _id: storedUser?._id || 'user_' + Date.now(),
-          name: storedUser?.name || email.split('@')[0],
-          email,
+          name: storedUser?.name || cleanEmail.split('@')[0],
+          email: cleanEmail,
           phone: storedUser?.phone || '+91 98765 12345',
-          role: storedUser?.role || (email.includes('provider') ? 'provider' : 'user'),
-          accountType: storedUser?.accountType || (email.includes('provider') ? 'provider' : 'customer'),
+          role: storedUser?.role || (cleanEmail.includes('provider') ? 'provider' : 'user'),
+          accountType: storedUser?.accountType || (cleanEmail.includes('provider') ? 'provider' : 'customer'),
           city: 'Lucknow, UP',
           avatar: storedUser?.avatar || defaultAvatarImg,
           notifications: { emailAlerts: true, pushAlerts: true, smsAlerts: true },

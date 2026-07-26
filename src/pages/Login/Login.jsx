@@ -64,7 +64,8 @@ function Login() {
 
     setLoading(true);
     try {
-      const result = await login(formData.email, formData.password);
+      const cleanEmail = formData.email.trim();
+      const result = await login(cleanEmail, formData.password);
       // Reset attempts on success
       setLoginAttempts(0);
       setLockedUntil(null);
