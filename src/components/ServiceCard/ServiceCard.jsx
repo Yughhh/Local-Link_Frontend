@@ -39,9 +39,6 @@ const categoryThemes = {
     themeClass: 'theme-electrician',
     iconBg: 'bg-purple-gradient',
     iconColor: '#ffffff',
-    tagBg: 'rgba(99, 102, 241, 0.25)',
-    tagColor: '#a5b4fc',
-    tagCode: '# 5666f1',
     badgeText: 'Verified Pro',
     badgeClass: 'badge-purple',
     fallbackIcon: FiZap
@@ -50,9 +47,6 @@ const categoryThemes = {
     themeClass: 'theme-plumber',
     iconBg: 'bg-cyan-light',
     iconColor: '#0284c7',
-    tagBg: 'rgba(16, 185, 129, 0.25)',
-    tagColor: '#6ee7b7',
-    tagCode: '# 6310pro',
     badgeText: 'Licensed Pro',
     badgeClass: 'badge-peach',
     fallbackIcon: FiDroplet
@@ -61,9 +55,6 @@ const categoryThemes = {
     themeClass: 'theme-cleaning',
     iconBg: 'bg-emerald-light',
     iconColor: '#059669',
-    tagBg: 'rgba(56, 189, 248, 0.25)',
-    tagColor: '#7dd3fc',
-    tagCode: '# eco-clean',
     badgeText: 'Eco Assured',
     badgeClass: 'badge-green',
     fallbackIcon: MdCleaningServices
@@ -72,9 +63,6 @@ const categoryThemes = {
     themeClass: 'theme-carpenter',
     iconBg: 'bg-amber-light',
     iconColor: '#d97706',
-    tagBg: 'rgba(245, 158, 11, 0.25)',
-    tagColor: '#fde047',
-    tagCode: '# master-wood',
     badgeText: 'Craftsman',
     badgeClass: 'badge-amber',
     fallbackIcon: FiTool
@@ -83,9 +71,6 @@ const categoryThemes = {
     themeClass: 'theme-grocery',
     iconBg: 'bg-rose-light',
     iconColor: '#e11d48',
-    tagBg: 'rgba(244, 63, 94, 0.25)',
-    tagColor: '#fca5a5',
-    tagCode: '# 20m-express',
     badgeText: 'Express 20m',
     badgeClass: 'badge-rose',
     fallbackIcon: FiShoppingBag
@@ -94,9 +79,6 @@ const categoryThemes = {
     themeClass: 'theme-pharmacy',
     iconBg: 'bg-red-light',
     iconColor: '#dc2626',
-    tagBg: 'rgba(239, 68, 68, 0.25)',
-    tagColor: '#fca5a5',
-    tagCode: '# 24x7-medical',
     badgeText: '24/7 Active',
     badgeClass: 'badge-red',
     fallbackIcon: FiPlusCircle
@@ -159,9 +141,6 @@ function ServiceCard({ service, onBookClick }) {
         <div className="tag-meta-row">
           <span className="location-meta-pill">
             <FiMapPin className="pill-icon" /> {area} ({distance})
-          </span>
-          <span className="code-tag-pill" style={{ background: theme.tagBg, color: theme.tagColor }}>
-            {theme.tagCode}
           </span>
         </div>
 
