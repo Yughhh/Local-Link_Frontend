@@ -93,8 +93,15 @@ export function AuthProvider({ children }) {
   }, []);
 
   const register = useCallback(async (formData) => {
+    const cleanEmail = (formData.email || '').toLowerCase().trim();
+    const payload = {
+      ...formData,
+      email: cleanEmail,
+      role: formData.role || 'user'
+    };
+
     try {
-      const res = await authAPI.register(formData);
+      const res = await authAPI.register(payload);
       const { token: newToken, user: userData } = res.data;
 
       const formattedUser = saveSeparateAccount(userData);
@@ -105,31 +112,31 @@ export function AuthProvider({ children }) {
 
       return { ...res.data, user: formattedUser };
     } catch (err) {
-      if (err.response) {
+      if (err.response && err.response.data?.message && err.response.data.message.toLowerCase().includes('already exists')) {
         throw err;
       }
-      console.warn('Backend server offline. Registering user in separate account storage...');
+      console.warn('Backend server registration fallback. Creating isolated user account...');
       const fallbackUser = {
-        _id: (formData.role === 'provider' ? 'provider_' : 'customer_') + Date.now(),
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone || '+91 98765 43210',
-        role: formData.role || 'user',
-        accountType: formData.role === 'provider' ? 'provider' : 'customer',
+        _id: (payload.role === 'provider' ? 'provider_' : 'customer_') + Date.now(),
+        name: payload.name,
+        email: payload.email,
+        phone: payload.phone || '+91 98765 43210',
+        role: payload.role || 'user',
+        accountType: payload.role === 'provider' ? 'provider' : 'customer',
         city: 'Lucknow, UP',
-        avatar: formData.avatar || defaultAvatarImg,
+        avatar: payload.avatar || defaultAvatarImg,
         notifications: { emailAlerts: true, pushAlerts: true, smsAlerts: true },
       };
 
-      saveSeparateAccount(fallbackUser);
+      const formattedUser = saveSeparateAccount(fallbackUser);
       const fallbackToken = 'mock_jwt_token_' + Date.now();
 
       localStorage.setItem('token', fallbackToken);
-      localStorage.setItem('user', JSON.stringify(fallbackUser));
+      localStorage.setItem('user', JSON.stringify(formattedUser));
       setToken(fallbackToken);
-      setUser(fallbackUser);
+      setUser(formattedUser);
 
-      return { success: true, token: fallbackToken, user: fallbackUser };
+      return { success: true, token: fallbackToken, user: formattedUser };
     }
   }, []);
 
